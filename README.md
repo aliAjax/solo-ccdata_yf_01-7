@@ -36,8 +36,8 @@
 无外部依赖，Node ≥ 18：
 
 ```bash
-node test/model.test.js   # 模型层 198 项断言（补间/历史/持久化/极端操作/PNG·APNG 字节）
-node test/ui.smoke.js     # 精简 DOM 垫片中真实驱动 UI 全链路（53 项）
+node test/model.test.js   # 模型层 208 项断言（补间/历史/切帧选择/持久化/极端操作/PNG·APNG 字节）
+node test/ui.smoke.js     # 精简 DOM 垫片中真实驱动 UI 全链路（73 项，含两个边界 bug 复现）
 node test/e2e.render.js   # 光栅化 + APNG 导出/解压端到端（12 项）
 ```
 

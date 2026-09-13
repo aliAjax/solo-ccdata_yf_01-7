@@ -507,7 +507,51 @@ function parseChunks(buf){
   ok(inf.equals(Buffer.from([1,2,3,4])), 'zlib stored 往返');
 }
 
-/* ---------------- 10. 极端规模与边界 ---------------- */
+/* ---------------- 10. selectFrame：图层数不一致时自动夹取 ---------------- */
+section('切帧选择夹取');
+{
+  const p = proj();                       // 帧0：1 图层
+  M.addLayer(p);                          // 帧0：2 图层
+  M.addFrame(p);                          // 帧1：继承 2 图层
+  M.addFrame(p);                          // 帧2：继承 2 图层
+  M.selectFrame(p, 2);
+  M.addLayer(p);                          // 帧2：3 图层
+  p.sel.layer = 2;
+  eq([p.sel.frame,p.sel.layer], [2,2], '准备：选中帧2第3层');
+
+  // 切到图层更少的帧：索引夹到末位有效图层，不留空选择
+  M.selectFrame(p, 1);
+  eq([p.sel.frame,p.sel.layer], [1,1], '切到 2 图层帧 → layer 夹到 1');
+  ok(!!M.curLayer(p), '切帧后始终存在当前图层');
+  M.selectFrame(p, 0);
+  eq([p.sel.frame,p.sel.layer], [0,1], '切到 2 图层帧0 → layer 1');
+
+  // 同名层优先匹配（新帧继承图层名）
+  M.selectFrame(p, 2);
+  p.sel.layer = 2;                        // 帧2 的“图层 3”
+  M.selectFrame(p, 1);                    // 帧1 无图层3 → 夹到末位
+  eq(p.sel.layer, 1, '无同名层时夹到末位');
+
+  // 图层数更多的帧：沿用原索引
+  M.selectFrame(p, 0); p.sel.layer = 0;
+  M.selectFrame(p, 2);
+  eq(p.sel.layer, 0, '切到更多图层帧沿用索引 0');
+
+  // 越界帧索引安全
+  M.selectFrame(p, 99);
+  eq(p.sel.frame, 2, '越界帧索引被夹住');
+  ok(!!M.curLayer(p), '越界后仍有当前图层');
+
+  // 少图层帧中删除唯一图层被模型拒绝后选择仍有效
+  const p2 = proj();
+  M.addFrame(p2);
+  M.deleteLayer(p2, 0);
+  eq(p2.frames[0].layers.length, 1, '帧0仍保留1层');
+  M.selectFrame(p2, 1);
+  ok(!!M.curLayer(p2), '帧1有有效图层');
+}
+
+/* ---------------- 11. 极端规模与边界 ---------------- */
 section('极端操作');
 {
   const p = proj();

@@ -16,6 +16,7 @@ function section(n){ console.log('• '+n); }
 
 /* ---------------- 迷你 DOM ---------------- */
 let currentBlob = function(parts,opts){ Object.assign(this,{parts,type:opts&&opts.type,size:(parts||[]).reduce((s,p)=>s+(p.byteLength||p.length||0),0)}); };
+const activeHolder = {doc:null};
 function parseAttrs(s){
   const attrs={}; const re=/([\w:-]+)(?:\s*=\s*"([^"]*)")?/g; let m;
   while((m=re.exec(s))) attrs[m[1]] = m[2] ?? '';
@@ -24,9 +25,17 @@ function parseAttrs(s){
 function txtNode(s){ return {nodeType:3, children:[], _text:s, textContent:s, parentNode:null}; }
 
 function El(tag){
+  const dataMap={};
+  const dataset=new Proxy(dataMap,{
+    get:(t,k)=>k in t ? String(t[k]) : undefined,
+    set:(t,k,v)=>{ t[k]=String(v); return true; },
+    has:(t,k)=>k in t,
+    ownKeys:t=>Reflect.ownKeys(t),
+    getOwnPropertyDescriptor:(t,k)=>Object.getOwnPropertyDescriptor(t,k)
+  });
   const el = {
     nodeType:1, tagName:tag.toUpperCase(), children:[], parentNode:null,
-    attributes:{}, style:{}, dataset:{}, value:'', checked:false, disabled:false,
+    attributes:{}, style:{}, dataset, value:'', checked:false, disabled:false,
     title:'', type:'', draggable:false, width:0, height:0, _cls:new Set(),
   };
   Object.defineProperty(el,'className',{get(){return [...el._cls].join(' ');},set(v){el._cls=new Set(String(v).split(/\s+/).filter(Boolean));}});
@@ -49,7 +58,8 @@ function El(tag){
   el.addEventListener=(t,fn)=>{(el.listeners[t]=el.listeners[t]||[]).push(fn);};
   el.removeEventListener=()=>{};
   el.setPointerCapture=()=>{}; el.releasePointerCapture=()=>{};
-  el.focus=()=>{}; el.blur=()=>{};
+  el.focus=()=>{ if(activeHolder.doc) activeHolder.doc.activeElement=el; };
+  el.blur=()=>{ if(activeHolder.doc && activeHolder.doc.activeElement===el) activeHolder.doc.activeElement=null; };
   el.getBoundingClientRect=()=>el._rect||{left:0,top:0,right:0,bottom:0,width:0,height:0,x:0,y:0};
   el.getContext=()=>ctx2d;
   el.toBlob=cb=>cb(new currentBlob([new Uint8Array([137,80,78,71,13,10,26,10,1,2,3])],{type:'image/png'}));
@@ -139,6 +149,7 @@ function makeEnv(store){
     },
     querySelectorAll:sel=>queryAll(root,sel),
   };
+  activeHolder.doc = doc;
   const winListeners={};
   const win={addEventListener:(t,f)=>{(winListeners[t]=winListeners[t]||[]).push(f);},removeEventListener(){},
     dispatchEvent:ev=>(winListeners[ev.type]||[]).forEach(f=>f(ev)),
@@ -338,6 +349,103 @@ E2.doc.querySelector('#addFrame').click();
 eq(E2.env.PL.deserialize(E2.env.localStorage.getItem('pixelLoomProject.v2')).frames.length,p2.frames.length+1,'恢复后可继续加帧');
 E2.win.dispatchEvent(new Ev('keydown',{key:'z',ctrlKey:true}));
 eq(E2.env.PL.deserialize(E2.env.localStorage.getItem('pixelLoomProject.v2')).frames.length,p2.frames.length,'恢复后撤销可用');
+
+section('BUG 复现 1：切到图层更少的帧 → 自动选中有效图层，面板不空白');
+{
+  const R = makeEnv({}); R.boot();
+  const d = R.doc, w = R.win, Mx = R.env.PL;
+  const read = () => Mx.deserialize(R.env.localStorage.getItem('pixelLoomProject.v2'));
+  const cards = () => queryAll(R.root,'.framecard');
+  const rows  = () => queryAll(R.root,'.layerrow');
+  const activeRow = () => rows().find(r=>r._cls.has('active'));
+
+  // 帧0：加两层 → 共 3 层；新增帧1（继承 3 层）
+  d.querySelector('#addLayer').click();
+  d.querySelector('#addLayer').click();
+  d.querySelector('#addFrame').click();
+  // 在帧1删掉两层，只剩 1 层
+  for(let k=0;k<2;k++){
+    d.querySelector('#delLayer').click();
+  }
+  eq(read().frames[1].layers.length,1,'帧1 只剩 1 层');
+  // 点回帧0，选中第 3 层（数组末）
+  cards()[0].dispatchEvent(new Ev('click'));
+  rows()[0].dispatchEvent(new Ev('click')); // 显示序首行 = 数组末层
+  // 纯选择切换不触发保存，通过实时 DOM 校验选中层
+  let active = activeRow();
+  ok(!!active && active.dataset.li==='2','帧0 选中第 3 层（活动行 data-li=2）');
+  // 关键：点到只有 1 层的帧1
+  cards()[1].dispatchEvent(new Ev('click'));
+  // 实时 DOM：图层列表必须仍有选中行、变换面板不为空
+  active = activeRow();
+  ok(!!active,'切帧后图层列表存在选中行（不丢失高亮）');
+  ok(active.dataset.li==='0','选中帧1 的有效图层 0（实际 '+active.dataset.li+'）');
+  eq(queryAll(R.root,'#channels .dia').length,5,'变换面板渲染 5 个通道（不为空）');
+  eq(queryAll(R.root,'#channels input[type=range]').length,5,'5 个通道滑杆都在');
+  // 触发一次真实编辑（切换显隐）使选择写入存档，再核对 sel
+  active.querySelector('.vis').dispatchEvent(new Ev('click'));
+  let pp = read();
+  eq(pp.sel.frame,1,'存档：当前帧=1');
+  ok(pp.sel.layer===0 && !!pp.frames[1].layers[0],'存档：帧1 自动夹到有效图层 0');
+  // 方向键切帧同样安全
+  d.querySelector('#addFrame').click(); // 帧2 继承帧1 的 1 层
+  w.dispatchEvent(new Ev('keydown',{key:'ArrowLeft'}));
+  const pp2 = read();
+  ok(pp2.frames[pp2.sel.frame].layers[pp2.sel.layer]!==undefined,'← 切帧后图层选择有效');
+  ok(queryAll(R.root,'#channels input[type=range]').length===5,'← 后通道滑杆仍在');
+  // 搓条播放跨帧也不白屏（直接驱动：把播放头移到帧2区间，采样切帧）
+  const scrub = d.querySelector('#scrub');
+  scrub._rect={left:0,top:0,width:1000,height:34,right:1000,bottom:34};
+  scrub.dispatchEvent(new Ev('pointerdown',{clientX:995,clientY:17,pointerId:1}));
+  scrub.dispatchEvent(new Ev('pointerup',{clientX:995,clientY:17,pointerId:1}));
+  const pp3 = read();
+  ok(pp3.frames[pp3.sel.frame].layers[pp3.sel.layer]!==undefined,'搓条跨帧后图层选择有效');
+  ok(!!queryAll(R.root,'.layerrow').find(r=>r._cls.has('active')),'搓条后仍有选中图层行');
+}
+
+section('BUG 复现 2：键盘调整图层不透明度 → 入历史、可撤销、可保存');
+{
+  const R = makeEnv({}); R.boot();
+  const d = R.doc, w = R.win, Mx = R.env.PL;
+  const read = () => Mx.deserialize(R.env.localStorage.getItem('pixelLoomProject.v2'));
+  const slider = d.querySelector('#layerOpacity');
+  d.querySelector('#save').click(); // 先落盘初始状态
+  slider.focus();
+  eq(read().frames[0].layers[0].opacity,1,'初始不透明度 1');
+
+  // 键盘：聚焦滑块后按方向键，浏览器会改 value 并派发 input/change；垫片里手动模拟该序列
+  slider.dispatchEvent(new Ev('keydown',{key:'ArrowRight'}));
+  slider.value = '0.9';
+  slider.dispatchEvent(new Ev('input'));
+  slider.dispatchEvent(new Ev('change'));
+  const after1 = read();
+  ok(Math.abs(after1.frames[0].layers[0].opacity-0.9)<1e-9,'键盘调整写入项目（0.9）');
+  // 自动保存：直接从 localStorage 重新反序列化得到 0.9（已在 read 中验证）
+  // 撤销
+  w.dispatchEvent(new Ev('keydown',{key:'z',ctrlKey:true}));
+  const undone = read();
+  ok(Math.abs(undone.frames[0].layers[0].opacity-1)<1e-9,'Ctrl+Z 撤销键盘不透明度调整（回到 1）');
+  // 重做
+  w.dispatchEvent(new Ev('keydown',{key:'y',ctrlKey:true}));
+  const redone = read();
+  ok(Math.abs(redone.frames[0].layers[0].opacity-0.9)<1e-9,'Ctrl+Y 重做回 0.9');
+  // 刷新恢复：新沙箱读同一存档
+  const R2 = makeEnv({'pixelLoomProject.v2':R.env.localStorage.getItem('pixelLoomProject.v2')});
+  R2.boot();
+  const restored = R2.env.PL.deserialize(R2.env.localStorage.getItem('pixelLoomProject.v2'));
+  ok(Math.abs(restored.frames[0].layers[0].opacity-0.9)<1e-9,'刷新后不透明度仍为 0.9（不回退）');
+  // 标签显示也恢复成 90%
+  eq(R2.doc.querySelector('#opLabel').textContent,'90%','恢复后 UI 不透明度标签 90%');
+
+  // 指针拖拽路径仍正常（单条历史、可撤销）
+  slider.blur();
+  slider.dispatchEvent(new Ev('pointerdown'));
+  slider.value='0.3'; slider.dispatchEvent(new Ev('input'));
+  w.dispatchEvent(new Ev('pointerup'));
+  ok(Math.abs(read().frames[0].layers[0].opacity-0.3)<1e-9,'拖拽调整为 0.3');
+  w.dispatchEvent(new Ev('keydown',{key:'z',ctrlKey:true}));
+  ok(Math.abs(read().frames[0].layers[0].opacity-0.9)<1e-9,'撤销拖拽回到 0.9');
+}
 
 section('旧版 v1 存档迁移');
 const cells=Array(256).fill(null); cells[7]='#010203';

@@ -314,6 +314,21 @@ details.shortcuts ul{margin:8px 0 0;padding-left:18px;color:var(--muted);font-si
     p.sel.layer = clamp(p.sel.layer|0, 0, Math.max(0, f.layers.length-1));
     return p;
   }
+  // 安全切帧：帧有效，图层选择自动夹到该帧的有效图层（优先沿用同名层，其次同索引）
+  function selectFrame(p, fi){
+    const target = p.frames[fi];
+    if(!target) return clampSel(p);
+    const from = curFrame(p);
+    let layer = p.sel.layer|0;
+    if(from && from.layers[layer] && target.layers[layer] === undefined){
+      const name = from.layers[layer].name;
+      const byName = target.layers.findIndex(l => l.name === name);
+      layer = byName >= 0 ? byName : Math.min(layer, target.layers.length-1);
+    }
+    p.sel.frame = fi;
+    p.sel.layer = clamp(layer, 0, Math.max(0, target.layers.length-1));
+    return p;
+  }
 
   /* ---------- 历史 ---------- */
   const strip = p => ({version:2, fps:p.fps, loop:!!p.loop, frames:p.frames,
@@ -886,7 +901,7 @@ details.shortcuts ul{margin:8px 0 0;padding-left:18px;color:var(--muted);font-si
     N, SIZE, HISTORY_LIMIT, DUR_MIN, DUR_MAX,
     CHANNELS, CH_LABEL, DEFAULTS, EASINGS, BLENDS, BLEND_LABEL,
     newProject, newLayer, newFrame, attachHistory,
-    curFrame, curLayer, clampSel, clamp, clampDur,
+    curFrame, curLayer, clampSel, selectFrame, clamp, clampDur,
     act, undo, redo, gestureBegin, gestureEnd,
     addLayer, deleteLayer, moveLayer, duplicateLayer, renameLayer,
     toggleVisible, toggleLocked, setLayerOpacity, setBlend,
@@ -1219,15 +1234,39 @@ $('#upLayer').addEventListener('click', ()=>{
 $('#downLayer').addEventListener('click', ()=>{
   M.moveLayer(P, li(), Math.max(0, li()-1)); afterChange();
 });
-let layerOpGesture = false;
+// 图层不透明度：指针拖拽与键盘调整走同一套“手势快照 → 改值 → 提交历史/保存”流程
+let layerOpGesture = false, layerOpKey = false;
+const OP_KEYS = ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','PageUp','PageDown','Home','End'];
 $('#layerOpacity').addEventListener('pointerdown', ()=>{ M.gestureBegin(P,'图层不透明度'); layerOpGesture=true; });
-$('#layerOpacity').addEventListener('input', e=>{
+$('#layerOpacity').addEventListener('keydown', e=>{
+  if(!layerOpGesture && !layerOpKey && OP_KEYS.includes(e.key)){
+    M.gestureBegin(P,'图层不透明度'); layerOpKey=true;
+  }
+});
+function applyLayerOpacity(v){
   const l = curL(); if(!l) return;
-  l.opacity = M.clamp(+e.target.value,0,1);
-  renderStage(); $('#opLabel').textContent = Math.round(l.opacity*100)+'%';
+  l.opacity = M.clamp(+v,0,1);
+  renderStageLight(); $('#opLabel').textContent = Math.round(l.opacity*100)+'%';
+}
+$('#layerOpacity').addEventListener('input', e=>{
+  if(layerOpGesture || layerOpKey) applyLayerOpacity(e.target.value);
+});
+$('#layerOpacity').addEventListener('change', e=>{
+  if(layerOpGesture) return;          // 指针拖拽在 pointerup 统一提交
+  if(layerOpKey){                      // 键盘每次提交都进入历史并保存
+    applyLayerOpacity(e.target.value);
+    M.gestureEnd(P); layerOpKey=false; afterChange();
+  }
+});
+$('#layerOpacity').addEventListener('blur', ()=>{
+  if(layerOpKey){ M.gestureEnd(P); layerOpKey=false; afterChange(); }
 });
 window.addEventListener('pointerup', ()=>{
-  if(layerOpGesture){ layerOpGesture=false; M.gestureEnd(P); afterChange(); }
+  if(layerOpGesture){
+    M.gestureEnd(P);
+    layerOpGesture = false;
+    afterChange();
+  }
 });
 $('#blend').addEventListener('change', e=>{ M.setBlend(P, li(), e.target.value); afterChange(); });
 
@@ -1359,7 +1398,7 @@ function seekPlayhead(ms){
   const total = M.totalDuration(P);
   playhead = P.loop ? ((ms%total)+total)%total : M.clamp(ms,0,total);
   const sm = M.sampleAt(P, playhead);
-  if(sm.frameIndex !== fi()){ P.sel.frame = sm.frameIndex; renderAll(); }
+  if(sm.frameIndex !== fi()){ M.selectFrame(P, sm.frameIndex); renderAll(); }
   else { renderStageLight(); }
 }
 let scrubbing = null;
@@ -1416,8 +1455,8 @@ function sampleFromEvent(e){
 function seekFromEvent(e){
   const sm = sampleFromEvent(e);
   playhead = sm.time;
-  if(sm.frameIndex !== fi()){ P.sel.frame = sm.frameIndex; renderAll({keepPlay:true}); }
-  else renderStage();
+  if(sm.frameIndex !== fi()){ M.selectFrame(P, sm.frameIndex); renderAll(); }
+  else renderStageLight();
 }
 $('#toStart').addEventListener('click', ()=>seekPlayhead(0));
 $('#play').addEventListener('click', togglePlay);
@@ -1445,7 +1484,7 @@ function tick(ts){
   playhead = nt;
   const sm = M.sampleAt(P, playhead);
   if(sm.frameIndex !== fi()){
-    P.sel.frame = sm.frameIndex;
+    M.selectFrame(P, sm.frameIndex);
     renderAll();
   }else{
     renderStageLight();
@@ -1496,8 +1535,8 @@ flist.addEventListener('click', e=>{
     afterChange(); return;
   }
   if(e.target.classList.contains('fdur')) return;
-  // 点击卡片：选中并跳到该帧开头
-  P.sel.frame = i;
+  // 点击卡片：选中（自动夹到该帧有效图层）并跳到该帧开头
+  M.selectFrame(P, i);
   playhead = M.frameStartAt(P,i);
   renderAll();
 });
@@ -1679,9 +1718,9 @@ window.addEventListener('keydown', e=>{
   switch(e.key){
     case ' ': e.preventDefault(); togglePlay(); break;
     case 'ArrowLeft': e.preventDefault();
-      if(P.sel.frame>0){ P.sel.frame--; seekPlayhead(M.frameStartAt(P,fi())); renderAll(); } break;
+      if(P.sel.frame>0){ M.selectFrame(P, P.sel.frame-1); seekPlayhead(M.frameStartAt(P,fi())); renderAll(); } break;
     case 'ArrowRight': e.preventDefault();
-      if(P.sel.frame<P.frames.length-1){ P.sel.frame++; seekPlayhead(M.frameStartAt(P,fi())); renderAll(); } break;
+      if(P.sel.frame<P.frames.length-1){ M.selectFrame(P, P.sel.frame+1); seekPlayhead(M.frameStartAt(P,fi())); renderAll(); } break;
     case 'ArrowUp': e.preventDefault();
       if(P.sel.layer<curF().layers.length-1){ P.sel.layer++; renderAll(); } break;
     case 'ArrowDown': e.preventDefault();
