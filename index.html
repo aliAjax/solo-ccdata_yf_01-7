@@ -1,12 +1,1720 @@
 <!doctype html>
-<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pixel Loom · 像素动画编辑器</title>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Pixel Loom · 多图层关键帧工作台</title>
 <style>
-:root{--bg:#11131a;--panel:#191c26;--line:#303545;--text:#edf1ff;--muted:#8d95ad;--accent:#77e1ba;--pink:#ff7aa8}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 15% 0,#252a3e,#11131a 42%);color:var(--text);font:14px Inter,system-ui,sans-serif}button,input{font:inherit}button{border:1px solid var(--line);background:#202433;color:var(--text);padding:8px 11px;border-radius:8px;cursor:pointer}button:hover{border-color:var(--accent);color:var(--accent)}.app{max-width:1400px;margin:auto;padding:24px}.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}.brand{display:flex;gap:12px;align-items:center}.mark{width:36px;height:36px;background:linear-gradient(135deg,var(--accent),#6a8cff);border-radius:10px;display:grid;place-items:center;color:#10151a;font-weight:800}.brand h1{font-size:20px;margin:0}.brand small{color:var(--muted)}.actions{display:flex;gap:8px}.primary{background:var(--accent);color:#10231e;border-color:var(--accent);font-weight:700}.workspace{display:grid;grid-template-columns:230px minmax(450px,1fr) 250px;gap:16px}.panel{background:rgba(25,28,38,.94);border:1px solid var(--line);border-radius:14px;padding:15px}.panel h3{margin:0 0 14px;font-size:12px;text-transform:uppercase;letter-spacing:.13em;color:var(--muted)}.toolgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.tool.active{border-color:var(--pink);color:var(--pink);background:#302333}.swatches{display:flex;flex-wrap:wrap;gap:9px}.sw{width:26px;height:26px;border-radius:7px;border:2px solid transparent;cursor:pointer}.sw.sel{border-color:white;box-shadow:0 0 0 2px var(--accent)}.range{width:100%;accent-color:var(--accent)}.center{display:flex;flex-direction:column;gap:12px;min-width:0}.canvasbox{background:#0c0e14;border:1px solid var(--line);border-radius:14px;padding:30px;display:grid;place-items:center;min-height:510px;position:relative}.canvaswrap{position:relative;image-rendering:pixelated;box-shadow:0 0 0 1px #3a4053,0 18px 60px #0008}.canvaswrap:before{content:"";position:absolute;inset:0;background-image:linear-gradient(#ffffff11 1px,transparent 1px),linear-gradient(90deg,#ffffff11 1px,transparent 1px);background-size:calc(100% / 16) calc(100% / 16);pointer-events:none}.canvas{display:block;image-rendering:pixelated;background:#252a3a}.onion{position:absolute;inset:0;opacity:.23;pointer-events:none}.timeline{display:flex;align-items:center;gap:9px;overflow:auto;padding:4px}.frames{display:flex;gap:8px;overflow:auto}.frame{min-width:70px;height:70px;background:#10131c;border:1px solid var(--line);border-radius:9px;padding:5px;cursor:pointer}.frame.active{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}.frame canvas{width:100%;height:100%;image-rendering:pixelated}.layer{display:flex;justify-content:space-between;align-items:center;padding:10px;border:1px solid transparent;border-radius:8px;cursor:pointer}.layer.active{background:#252a39;border-color:var(--accent)}.layer span{color:var(--muted);font-size:12px}.field{display:flex;justify-content:space-between;align-items:center;color:var(--muted);margin:11px 0}.field input[type=text],.field select{width:120px;background:#10131b;border:1px solid var(--line);color:var(--text);padding:7px;border-radius:7px}.hint{color:var(--muted);font-size:12px;line-height:1.5}.status{font-size:12px;color:var(--accent);min-height:18px}.kbd{border:1px solid var(--line);padding:2px 6px;border-radius:5px;color:var(--muted)}@media(max-width:1000px){.workspace{grid-template-columns:190px 1fr}.right{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:16px}}@media(max-width:700px){.app{padding:14px}.workspace{grid-template-columns:1fr}.left,.right{display:block}.canvasbox{min-height:360px;padding:15px}.actions button span{display:none}}
-</style></head><body><main class="app"><header class="top"><div class="brand"><div class="mark">P</div><div><h1>Pixel Loom</h1><small>帧动画工作台 · 本地项目</small></div></div><div class="actions"><button id="undo">↶ 撤销</button><button id="redo">↷ 重做</button><button id="save" class="primary">保存项目</button><button id="export">导出 PNG</button></div></header>
-<section class="workspace"><aside class="panel left"><h3>工具</h3><div class="toolgrid"><button class="tool active" data-tool="pencil">✦ 画笔</button><button class="tool" data-tool="eraser">⌫ 橡皮</button><button class="tool" data-tool="fill">◩ 填充</button><button class="tool" data-tool="picker">◉ 取色</button></div><h3 style="margin-top:25px">颜色</h3><div class="swatches" id="swatches"></div><input id="custom" type="color" value="#ff7aa8" style="width:100%;height:36px;margin-top:12px;background:#10131b;border:1px solid var(--line);border-radius:8px"><h3 style="margin-top:25px">画布</h3><div class="field"><label>缩放</label><input id="zoom" class="range" type="range" min="8" max="28" value="20"></div><div class="field"><label>网格</label><input id="grid" type="checkbox" checked></div><p class="hint">点击像素绘制，按住拖动连续涂色。支持 ⌘/Ctrl + Z。</p></aside>
-<section class="center"><div class="canvasbox"><div class="canvaswrap" id="canvaswrap"><canvas id="onion" class="onion" width="320" height="320"></canvas><canvas id="canvas" class="canvas" width="320" height="320"></canvas></div></div><div class="panel timeline"><button id="addFrame" class="primary">＋ 新建帧</button><button id="duplicate">复制</button><div class="frames" id="frames"></div><label style="margin-left:auto;color:var(--muted);white-space:nowrap">FPS <input id="fps" type="number" min="1" max="24" value="8" style="width:45px;background:#10131b;border:1px solid var(--line);color:white;padding:5px;border-radius:6px"></label></div><div class="status" id="status"></div></section>
-<aside class="panel right"><h3>图层</h3><div id="layers"><div class="layer active"><b>主图层</b><span>可见</span></div><div class="layer"><b>阴影</b><span>可见</span></div></div><button id="addLayer" style="width:100%;margin-top:10px">＋ 添加图层</button><h3 style="margin-top:25px">洋葱皮</h3><div class="field"><label>显示前一帧</label><input id="onionToggle" type="checkbox"></div><div class="field"><label>透明度</label><input id="opacity" class="range" type="range" min="5" max="60" value="23"></div><h3 style="margin-top:25px">播放预览</h3><button id="play" class="primary" style="width:100%">▶ 播放动画</button><p class="hint" style="margin-top:10px">项目会自动保存至浏览器本地存储。</p></aside></section></main>
+:root{
+  --bg:#11131a;--panel:#191c26;--panel2:#10131c;--line:#303545;--text:#edf1ff;--muted:#8d95ad;
+  --accent:#77e1ba;--pink:#ff7aa8;--blue:#6a8cff;--warn:#ffd166;--danger:#ff6b6b;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%}
+body{background:radial-gradient(circle at 15% 0,#252a3e,#11131a 42%);color:var(--text);font:14px/1.45 Inter,system-ui,"PingFang SC","Microsoft YaHei",sans-serif}
+button,input,select{font:inherit;color:inherit}
+button{border:1px solid var(--line);background:#202433;padding:7px 10px;border-radius:8px;cursor:pointer;touch-action:manipulation}
+button:hover{border-color:var(--accent);color:var(--accent)}
+button.icon{padding:6px 8px;line-height:1}
+button:disabled{opacity:.4;cursor:default;pointer-events:none}
+input[type=range]{accent-color:var(--accent);width:100%}
+input[type=number],input[type=text],select{background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:6px 7px;color:var(--text)}
+input[type=number]{width:64px}
+input[type=checkbox]{accent-color:var(--accent);width:16px;height:16px}
+.app{max-width:1480px;margin:auto;padding:20px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.brand{display:flex;gap:12px;align-items:center}
+.mark{width:36px;height:36px;background:linear-gradient(135deg,var(--accent),#6a8cff);border-radius:10px;display:grid;place-items:center;color:#10151a;font-weight:800;font-size:18px}
+.brand h1{font-size:19px;margin:0}
+.brand small{color:var(--muted)}
+.actions{display:flex;gap:7px;flex-wrap:wrap}
+.primary{background:var(--accent);color:#10231e;border-color:var(--accent);font-weight:700}
+.primary:hover{color:#0b1a16;filter:brightness(1.08)}
+.danger:hover{border-color:var(--danger);color:var(--danger)}
+.workspace{display:grid;grid-template-columns:218px minmax(420px,1fr) 282px;gap:14px;align-items:start}
+.panel{background:rgba(25,28,38,.95);border:1px solid var(--line);border-radius:14px;padding:14px}
+.panel h3{margin:0 0 11px;font-size:11px;text-transform:uppercase;letter-spacing:.13em;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
+.panel h3:not(:first-child){margin-top:20px}
+.center{display:flex;flex-direction:column;gap:12px;min-width:0}
+.toolgrid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.tool.active{border-color:var(--pink);color:var(--pink);background:#302333}
+.swatches{display:flex;flex-wrap:wrap;gap:7px}
+.sw{width:24px;height:24px;border-radius:6px;border:2px solid transparent;padding:0}
+.sw.sel{border-color:#fff;box-shadow:0 0 0 2px var(--accent)}
+.field{display:flex;justify-content:space-between;align-items:center;gap:8px;color:var(--muted);margin:9px 0;font-size:13px}
+.field input[type=text]{width:120px}
+.hint{color:var(--muted);font-size:11.5px;line-height:1.6;margin:8px 0 0}
+.kbd{border:1px solid var(--line);padding:1px 5px;border-radius:5px;color:var(--muted);font-size:11px;background:#10131b;white-space:nowrap}
+.canvasbox{background:#0c0e14;border:1px solid var(--line);border-radius:14px;padding:24px;display:grid;place-items:center;min-height:420px;position:relative;overflow:auto}
+.canvaswrap{position:relative;image-rendering:pixelated;box-shadow:0 0 0 1px #3a4053,0 18px 60px #0008;width:320px;height:320px;flex:none}
+.canvaswrap.gridon:before{content:"";position:absolute;inset:0;background-image:linear-gradient(#ffffff11 1px,transparent 1px),linear-gradient(90deg,#ffffff11 1px,transparent 1px);background-size:calc(100% / 16) calc(100% / 16);pointer-events:none;z-index:2}
+.canvaswrap.canvaslock{cursor:not-allowed}
+.canvas{display:block;image-rendering:pixelated;width:320px;height:320px;touch-action:none}
+.lockbadge{position:absolute;top:8px;left:8px;background:#000a;border:1px solid var(--line);border-radius:6px;padding:2px 8px;font-size:11px;color:var(--warn);z-index:3;display:none}
+.canvaswrap.locked .lockbadge{display:block}
+/* 时间线（帧条） */
+.timeline{display:flex;align-items:stretch;gap:9px;overflow-x:auto;padding:4px 2px}
+.framelist{display:flex;gap:8px;overflow-x:auto;padding:2px;min-height:96px;flex:1}
+.framelist.over{outline:2px dashed var(--accent);outline-offset:-4px;border-radius:8px}
+.framecard{position:relative;min-width:76px;width:76px;height:92px;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:5px;cursor:pointer;display:flex;flex-direction:column;gap:3px;flex:none;touch-action:none;user-select:none}
+.framecard.active{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.framecard.playing{border-color:var(--blue)}
+.framecard .thumb{width:100%;height:56px;image-rendering:pixelated;border-radius:4px;background:#202433;pointer-events:none}
+.framecard .fname{font-size:10px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;pointer-events:none}
+.framecard .fdur{position:absolute;right:4px;top:4px;width:42px;font-size:10px;padding:1px 3px;opacity:.85}
+.framecard .fbtns{position:absolute;left:4px;bottom:3px;display:flex;gap:3px}
+.framecard .fbtns button{padding:0 4px;font-size:10px;border-radius:5px;line-height:16px;background:#0006;border-color:#ffffff22}
+.framecard.dragging{opacity:.4}
+/* 播放/搓条 */
+.transport{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.scrub{position:relative;flex:1;min-width:180px;height:34px;background:#0c0e14;border:1px solid var(--line);border-radius:8px;cursor:pointer;touch-action:none}
+.scrub .seg{position:absolute;top:0;bottom:0;border-right:1px dashed #ffffff22}
+.scrub .seg.cur{background:#77e1ba14}
+.scrub .key{position:absolute;top:50%;width:11px;height:11px;background:var(--pink);transform:translate(-50%,-50%) rotate(45deg);border:1px solid #fff7;z-index:2;touch-action:none;cursor:grab}
+.scrub .key.ch-x{background:#ff7aa8}.scrub .key.ch-y{background:#ffd166}.scrub .key.ch-scale{background:#77e1ba}.scrub .key.ch-rot{background:#6a8cff}.scrub .key.ch-op{background:#b18cff}
+.scrub .key.dragging{cursor:grabbing;box-shadow:0 0 6px #fff}
+.scrub .head{position:absolute;top:-2px;bottom:-2px;width:2px;background:#fff;z-index:3;pointer-events:none;box-shadow:0 0 6px #fff9}
+.timeread{font-variant-numeric:tabular-nums;color:var(--muted);font-size:12px;min-width:86px;text-align:right}
+/* 图层 */
+.layerlist{display:flex;flex-direction:column;gap:5px;max-height:300px;overflow-y:auto}
+.layerrow{display:flex;align-items:center;gap:6px;padding:7px 8px;border:1px solid transparent;border-radius:8px;cursor:pointer;background:#141826;touch-action:none}
+.layerrow.active{background:#252a39;border-color:var(--accent)}
+.layerrow.dragging{opacity:.4}
+.layerrow .grip{color:var(--muted);font-size:12px;cursor:grab}
+.layerrow .lname{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
+.layerrow.hidden .lname{color:var(--muted);text-decoration:line-through}
+.layerrow button{padding:3px 6px;border-radius:6px;font-size:12px;background:transparent}
+.layerrow button.on{color:var(--accent);border-color:var(--accent)}
+.layerrow button.locked{color:var(--warn);border-color:var(--warn)}
+.rowbtns{display:flex;gap:6px;margin-top:8px}
+.rowbtns button{flex:1;padding:6px 4px;font-size:12px}
+select{max-width:100%}
+/* 通道 */
+.chrow{display:grid;grid-template-columns:54px 22px 1fr 58px 22px;gap:6px;align-items:center;margin:7px 0;font-size:12px}
+.chrow .chl{color:var(--muted)}
+.chrow .chv{font-size:11px;color:var(--text);text-align:right;font-variant-numeric:tabular-nums}
+.dia{width:18px;height:18px;padding:0;border-radius:4px;display:grid;place-items:center;font-size:10px;line-height:1}
+.dia.on{background:var(--pink);border-color:var(--pink);color:#3a0d20;font-weight:800}
+.dia.on:hover{color:#3a0d20}
+.chgo{padding:2px 5px;font-size:11px}
+.status{font-size:12px;min-height:18px;color:var(--accent);word-break:break-all}
+.status.warn{color:var(--warn)}
+details.shortcuts summary{cursor:pointer;color:var(--muted);font-size:12px}
+details.shortcuts ul{margin:8px 0 0;padding-left:18px;color:var(--muted);font-size:11.5px;line-height:1.9}
+.exportrow{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+@media(max-width:1100px){
+  .workspace{grid-template-columns:200px minmax(380px,1fr)}
+  .right{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+  .layerlist{max-height:200px}
+}
+@media(max-width:760px){
+  .app{padding:10px 8px}
+  .workspace{grid-template-columns:1fr}
+  .right{display:flex;flex-direction:column;grid-column:auto}
+  .canvasbox{min-height:0;padding:12px}
+  .actions .lbl{display:none}
+  .actions button{padding:8px}
+  .brand small{display:none}
+  .chrow{grid-template-columns:48px 20px 1fr 52px 20px}
+}
+</style>
+</head>
+<body>
+<main class="app">
+  <header class="top">
+    <div class="brand">
+      <div class="mark">P</div>
+      <div><h1>Pixel Loom</h1><small>多图层关键帧工作台 · 本地保存</small></div>
+    </div>
+    <div class="actions">
+      <button id="undo" title="撤销 (Ctrl+Z)">↶<span class="lbl"> 撤销</span></button>
+      <button id="redo" title="重做 (Ctrl+Y)">↷<span class="lbl"> 重做</span></button>
+      <button id="save" class="primary" title="保存到浏览器 (Ctrl+S)">💾<span class="lbl"> 保存</span></button>
+      <button id="expFrame" title="导出当前播放头所在合成帧">🖼<span class="lbl"> 当前帧</span></button>
+      <button id="expSheet" title="导出精灵表 PNG + JSON">▦<span class="lbl"> 精灵表</span></button>
+      <button id="expApng" title="导出循环 APNG 动画">🎞<span class="lbl"> 动画</span></button>
+    </div>
+  </header>
+
+  <section class="workspace">
+    <!-- 左：工具 -->
+    <aside class="panel left">
+      <h3>工具</h3>
+      <div class="toolgrid">
+        <button class="tool active" data-tool="pencil" title="B">✦ 画笔</button>
+        <button class="tool" data-tool="eraser" title="E">⌫ 橡皮</button>
+        <button class="tool" data-tool="fill" title="G">◩ 填充</button>
+        <button class="tool" data-tool="picker" title="I">◉ 取色</button>
+      </div>
+      <h3>颜色</h3>
+      <div class="swatches" id="swatches"></div>
+      <input id="custom" type="color" value="#ff7aa8" style="width:100%;height:34px;margin-top:10px;background:var(--panel2);border:1px solid var(--line);border-radius:8px">
+      <h3>舞台</h3>
+      <div class="field"><label>显示缩放</label><input id="zoom" type="range" min="1" max="8" value="2" step="1"></div>
+      <div class="field"><label>像素网格</label><input id="grid" type="checkbox" checked></div>
+      <h3>导出</h3>
+      <div class="field"><label>倍率</label>
+        <select id="expScale"><option>1</option><option>2</option><option selected>4</option><option>8</option></select>
+      </div>
+      <div class="field"><label>帧率 FPS</label><input id="expFps" type="number" min="1" max="30" value="24"></div>
+      <div class="field"><label>深色背景</label><input id="expBg" type="checkbox" checked></div>
+      <details class="shortcuts">
+        <summary>键盘 / 触屏快捷键</summary>
+        <ul>
+          <li><span class="kbd">空格</span> 播放 / 暂停</li>
+          <li><span class="kbd">Ctrl</span>+<span class="kbd">Z</span> / <span class="kbd">Y</span> 撤销 / 重做</li>
+          <li><span class="kbd">Ctrl</span>+<span class="kbd">S</span> 保存</li>
+          <li><span class="kbd">←</span><span class="kbd">→</span> 切帧 · <span class="kbd">↑</span><span class="kbd">↓</span> 切图层</li>
+          <li><span class="kbd">B</span><span class="kbd">E</span><span class="kbd">G</span><span class="kbd">I</span> 画笔/橡皮/填充/取色</li>
+          <li><span class="kbd">Home</span> 回到开头</li>
+        </ul>
+        <p class="hint">所有操作均可触屏完成：帧、图层、钻石关键帧都支持按住拖拽。</p>
+      </details>
+    </aside>
+
+    <!-- 中：舞台 + 搓条 + 时间线 -->
+    <section class="center">
+      <div class="canvasbox">
+        <div class="canvaswrap gridon" id="canvaswrap">
+          <canvas id="canvas" class="canvas" width="320" height="320"></canvas>
+          <div class="lockbadge">🔒 当前图层已锁定</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>播放 / 补间预览</h3>
+        <div class="transport">
+          <button id="toStart" class="icon" title="回到开头 (Home)">⏮</button>
+          <button id="play" class="primary icon" style="min-width:52px" title="空格">▶ 播放</button>
+          <label class="field" style="margin:0"><input id="loop" type="checkbox" checked> 循环</label>
+          <div class="scrub" id="scrub">
+            <div class="head" id="scrubHead" style="left:0"></div>
+          </div>
+          <span class="timeread" id="timeread">0.00s</span>
+        </div>
+        <p class="hint">搓条上的彩色菱形为当前图层的关键帧，可拖拽改时间；点击轨道任意位置预览该时刻的补间。</p>
+      </div>
+
+      <div class="panel">
+        <h3>时间线 · 帧（可拖拽排序 / 复制 / 调时长）</h3>
+        <div class="timeline">
+          <div class="framelist" id="framelist"></div>
+          <div style="display:flex;flex-direction:column;gap:6px;justify-content:center">
+            <button id="addFrame" class="primary">＋ 新帧</button>
+            <button id="dupFrame">⧉ 复制帧</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="status" id="status"></div>
+    </section>
+
+    <!-- 右：图层 + 变换关键帧 -->
+    <aside class="panel right">
+      <h3>图层</h3>
+      <div class="layerlist" id="layerlist"></div>
+      <div class="rowbtns">
+        <button id="addLayer">＋ 添加</button>
+        <button id="dupLayer">⧉ 复制</button>
+        <button id="upLayer" title="上移">↑</button>
+        <button id="downLayer" title="下移">↓</button>
+        <button id="delLayer" class="danger">🗑</button>
+      </div>
+
+      <h3>图层外观</h3>
+      <div class="field"><label>不透明度</label><span id="opLabel" style="width:44px;text-align:right">100%</span></div>
+      <input id="layerOpacity" type="range" min="0" max="1" step="0.01" value="1">
+      <div class="field" style="margin-top:12px"><label>混合模式</label>
+        <select id="blend" style="width:138px"></select>
+      </div>
+
+      <h3>变换 · 关键帧</h3>
+      <div id="channels"></div>
+      <div class="field" style="margin-top:6px"><label>出点补间缓动</label>
+        <select id="ease" style="width:120px">
+          <option value="linear">线性</option>
+          <option value="easeIn">缓入</option>
+          <option value="easeOut">缓出</option>
+          <option value="easeInOut">缓入缓出</option>
+        </select>
+      </div>
+      <p class="hint">点 ◆ 在当前时刻打/删关键帧；拖动数值条可直接调整（无关键帧时自动打点）。单图层单通道多关键帧之间自动生成补间。</p>
+    </aside>
+  </section>
+</main>
+
 <script>
-const N=16, colors=['#ff7aa8','#77e1ba','#ffd166','#6a8cff','#b18cff','#ffffff','#11131a','#f97316'];let frames=[Array(N*N).fill('')],current=0,history=[],future=[],tool='pencil',color=colors[0],drawing=false;
-const c=document.querySelector('#canvas'),ctx=c.getContext('2d'),oc=document.querySelector('#onion'),octx=oc.getContext('2d');function snap(){return frames.map(f=>f.slice())}function push(){history.push(snap());if(history.length>30)history.shift();future=[]}function draw(){ctx.clearRect(0,0,320,320);ctx.fillStyle='#202433';ctx.fillRect(0,0,320,320);let s=20;frames[current].forEach((v,i)=>{if(v){ctx.fillStyle=v;ctx.fillRect(i%N*s,Math.floor(i/N)*s,s,s)}});octx.clearRect(0,0,320,320);if(document.querySelector('#onionToggle').checked&&current>0){frames[current-1].forEach((v,i)=>{if(v){octx.fillStyle=v;octx.fillRect(i%N*s,Math.floor(i/N)*s,s,s)}})}renderFrames()}function renderFrames(){let el=document.querySelector('#frames');el.innerHTML='';frames.forEach((f,i)=>{let b=document.createElement('div');b.className='frame '+(i===current?'active':'');let x=document.createElement('canvas');x.width=x.height=N;let q=x.getContext('2d');q.fillStyle='#202433';q.fillRect(0,0,N,N);f.forEach((v,j)=>{if(v){q.fillStyle=v;q.fillRect(j%N,Math.floor(j/N),1,1)}});b.append(x);b.onclick=()=>{current=i;draw()};el.append(b)})}function setPixel(e){let r=c.getBoundingClientRect(),x=Math.floor((e.clientX-r.left)/r.width*N),y=Math.floor((e.clientY-r.top)/r.height*N),i=y*N+x;if(x<0||x>=N||y<0||y>=N)return;if(tool==='picker'){if(frames[current][i]){color=frames[current][i];document.querySelector('#custom').value=color}return}if(!drawing)push();frames[current][i]=tool==='eraser'?'':color;draw()}c.addEventListener('pointerdown',e=>{drawing=true;setPixel(e)});c.addEventListener('pointermove',e=>{if(drawing)setPixel(e)});window.addEventListener('pointerup',()=>drawing=false);document.querySelectorAll('.tool').forEach(b=>b.onclick=()=>{tool=b.dataset.tool;document.querySelectorAll('.tool').forEach(x=>x.classList.remove('active'));b.classList.add('active')});document.querySelector('#swatches').innerHTML=colors.map(x=>`<button class="sw" style="background:${x}" data-c="${x}"></button>`).join('');document.querySelectorAll('.sw').forEach(b=>b.onclick=()=>{color=b.dataset.c;document.querySelector('#custom').value=color});document.querySelector('#custom').oninput=e=>color=e.target.value;document.querySelector('#zoom').oninput=e=>{c.style.width=c.style.height=e.target.value*16+'px';oc.style.width=oc.style.height=e.target.value*16+'px';document.querySelector('#canvaswrap').style.width=document.querySelector('#canvaswrap').style.height=e.target.value*16+'px'};document.querySelector('#grid').onchange=e=>document.querySelector('#canvaswrap').classList.toggle('nogrid',!e.target.checked);document.querySelector('#opacity').oninput=e=>oc.style.opacity=e.target.value/100;document.querySelector('#onionToggle').onchange=draw;document.querySelector('#addFrame').onclick=()=>{push();frames.push(Array(N*N).fill(''));current=frames.length-1;draw()};document.querySelector('#duplicate').onclick=()=>{push();frames.splice(current+1,0,frames[current].slice());current++;draw()};document.querySelector('#addLayer').onclick=()=>{let n=document.querySelectorAll('.layer').length+1,d=document.createElement('div');d.className='layer';d.innerHTML=`<b>图层 ${n}</b><span>可见</span>`;document.querySelector('#layers').append(d)};document.querySelector('#undo').onclick=()=>{if(history.length){future.push(snap());frames=history.pop();current=Math.min(current,frames.length-1);draw()}};document.querySelector('#redo').onclick=()=>{if(future.length){history.push(snap());frames=future.pop();draw()}};document.querySelector('#save').onclick=()=>{localStorage.pixelLoom=JSON.stringify({frames,fps:document.querySelector('#fps').value});document.querySelector('#status').textContent='已保存到本地 · '+new Date().toLocaleTimeString()};document.querySelector('#export').onclick=()=>{let a=document.createElement('a');a.download='pixel-loom-frame.png';a.href=c.toDataURL('image/png');a.click();document.querySelector('#status').textContent='已导出当前帧 PNG'};document.querySelector('#play').onclick=()=>{let i=0;document.querySelector('#play').textContent='■ 停止预览';let t=setInterval(()=>{current=i++%frames.length;draw()},1000/(+document.querySelector('#fps').value||8));document.querySelector('#play').onclick=()=>{clearInterval(t);document.querySelector('#play').textContent='▶ 播放动画'}};if(localStorage.pixelLoom){try{let d=JSON.parse(localStorage.pixelLoom);frames=d.frames||frames;document.querySelector('#fps').value=d.fps||8}catch(e){}}document.querySelector('#zoom').dispatchEvent(new Event('input'));draw();
-</script></body></html>
+/*===================== MODEL（无 DOM 依赖，可在 Node 中直接测试） =====================*/
+/*MODEL*/
+(function (global) {
+  'use strict';
+  const N = 16;
+  const SIZE = 320;
+  const HISTORY_LIMIT = 80;
+  const DUR_MIN = 20, DUR_MAX = 10000;
+  const CHANNELS = ['x','y','scale','rot','op'];
+  const CH_LABEL = {x:'X 位移',y:'Y 位移',scale:'缩放',rot:'旋转°',op:'透明度'};
+  const DEFAULTS = {x:0, y:0, scale:1, rot:0, op:1};
+  const EASINGS = {
+    linear: t => t,
+    easeIn: t => t * t,
+    easeOut: t => 1 - (1 - t) * (1 - t),
+    easeInOut: t => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2)
+  };
+  const BLENDS = ['source-over','multiply','screen','overlay','darken','lighten',
+    'color-dodge','color-burn','hard-light','soft-light','difference','exclusion'];
+  const BLEND_LABEL = {
+    'source-over':'正常','multiply':'正片叠底','screen':'滤色','overlay':'叠加',
+    'darken':'变暗','lighten':'变亮','color-dodge':'颜色减淡','color-burn':'颜色加深',
+    'hard-light':'强光','soft-light':'柔光','difference':'差值','exclusion':'排除'
+  };
+
+  let uidc = 1;
+  function uid(p){ return p + (uidc++).toString(36); }
+  function bumpUid(s){
+    const m = String(s).replace(/[^0-9a-z]/gi,'').match(/[0-9a-z]+$/);
+    if(m){ const n = parseInt(m[0],36); if(isFinite(n) && n >= uidc) uidc = n + 1; }
+  }
+  const clamp = (v,a,b) => Math.min(b, Math.max(a, v));
+  const lerp = (a,b,t) => a + (b - a) * t;
+  const clone = v => JSON.parse(JSON.stringify(v));
+  const clampDur = d => {
+    const n = +d;
+    return clamp(Math.round(isFinite(n) ? n : DUR_MIN), DUR_MIN, DUR_MAX);
+  };
+
+  function blankPixels(){ return new Array(N*N).fill(null); }
+
+  function newLayer(name){
+    return {id:uid('l'), name:name||'图层', pixels:blankPixels(),
+      visible:true, locked:false, opacity:1, blend:'source-over', keys:[]};
+  }
+  function newFrame(index, duration){
+    return {id:uid('f'), name:'帧 '+(index+1), duration:clampDur(duration ?? 250), layers:[]};
+  }
+  function newProject(){
+    uidc = 1;
+    const f = newFrame(0, 250);
+    f.layers.push(newLayer('图层 1'));
+    return {version:2, fps:12, loop:true, frames:[f], sel:{frame:0, layer:0}};
+  }
+  function reid(frame){
+    frame.id = uid('f');
+    frame.layers.forEach(l => { l.id = uid('l'); });
+    return frame;
+  }
+
+  const curFrame = p => p.frames[p.sel.frame];
+  const curLayer = p => { const f = curFrame(p); return f && f.layers[p.sel.layer]; };
+
+  function clampSel(p){
+    if(!p.frames.length) return p;
+    p.sel.frame = clamp(p.sel.frame|0, 0, p.frames.length-1);
+    const f = curFrame(p);
+    p.sel.layer = clamp(p.sel.layer|0, 0, Math.max(0, f.layers.length-1));
+    return p;
+  }
+
+  /* ---------- 历史 ---------- */
+  const strip = p => ({version:2, fps:p.fps, loop:!!p.loop, frames:p.frames,
+    sel:{frame:p.sel.frame, layer:p.sel.layer}});
+  function act(p, label, fn){
+    const before = JSON.stringify(strip(p));
+    if(fn(p) === false) return p;
+    const after = JSON.stringify(strip(p));
+    if(after === before) return p; // 无变化不入栈
+    p._past.push({label, snap:JSON.parse(before)});
+    if(p._past.length > HISTORY_LIMIT) p._past.shift();
+    p._future.length = 0;
+    clampSel(p);
+    return p;
+  }
+  function restore(p, s){
+    p.version = 2; p.fps = s.fps; p.loop = s.loop; p.frames = s.frames;
+    p.sel = s.sel || {frame:0, layer:0};
+    clampSel(p);
+  }
+  function undo(p){
+    if(!p._past.length) return null;
+    p._future.push({label:'重做', snap:clone(strip(p))});
+    const entry = p._past.pop();
+    restore(p, entry.snap);
+    return entry.label;
+  }
+  function redo(p){
+    if(!p._future.length) return null;
+    p._past.push({label:'编辑', snap:clone(strip(p))});
+    const entry = p._future.pop();
+    restore(p, entry.snap);
+    return true;
+  }
+
+  /* ---------- 图层操作 ---------- */
+  const addLayer = p => act(p,'添加图层', q => {
+    const f = curFrame(q);
+    f.layers.push(newLayer('图层 '+(f.layers.length+1)));
+    q.sel.layer = f.layers.length - 1;
+  });
+  const deleteLayer = (p, li) => act(p,'删除图层', q => {
+    const f = curFrame(q);
+    if(f.layers.length <= 1) return false;
+    f.layers.splice(li,1);
+    q.sel.layer = clamp(li, 0, f.layers.length-1);
+  });
+  // to = 元素最终所在的数组下标（to > from 时插入到剩余数组 rank=to 处即末位）
+  function moveLayer(p, from, to){
+    const f = curFrame(p);
+    const len = f.layers.length;
+    if(from<0 || from>=len || to<0 || to>=len || from===to) return p;
+    return act(p,'图层排序', q => {
+      const ff = curFrame(q), [x] = ff.layers.splice(from,1);
+      ff.layers.splice(to,0,x);
+      q.sel.layer = to;
+    });
+  }
+  const duplicateLayer = (p, li) => act(p,'复制图层', q => {
+    const f = curFrame(q);
+    li = clamp(li,0,f.layers.length-1);
+    const src = f.layers[li];
+    const copy = clone(src); copy.id = uid('l');
+    copy.name = src.name + ' 副本';
+    f.layers.splice(li+1, 0, copy);
+    q.sel.layer = li+1;
+  });
+  const renameLayer = (p, li, name) => act(p,'重命名图层', q => {
+    const trimmed = String(name==null?'':name).trim();
+    const l = curFrame(q).layers[li];
+    if(trimmed) l.name = trimmed.slice(0,40); // 空白名保留原名（act 无变化不入栈）
+  });
+  const toggleVisible = (p, li) => act(p,'显隐图层', q => {
+    const l = curFrame(q).layers[li]; l.visible = !l.visible;
+  });
+  const toggleLocked = (p, li) => act(p,'锁定图层', q => {
+    const l = curFrame(q).layers[li]; l.locked = !l.locked;
+  });
+  const setLayerOpacity = (p, li, v) => act(p,'图层不透明度', q => {
+    curFrame(q).layers[li].opacity = clamp(+v,0,1);
+  });
+  const setBlend = (p, li, b) => act(p,'混合模式', q => {
+    const l = curFrame(q).layers[li];
+    if(BLENDS.indexOf(b) < 0) return false;
+    l.blend = b;
+  });
+
+  /* ---------- 帧操作 ---------- */
+  const addFrame = p => act(p,'添加帧', q => {
+    const f = newFrame(q.frames.length, curFrame(q).duration);
+    // 新帧沿用当前帧的图层结构（空白像素），便于保持图层规划
+    curFrame(q).layers.forEach(l => {
+      const nl = newLayer(l.name); nl.opacity = l.opacity; nl.blend = l.blend;
+      nl.visible = l.visible; nl.locked = l.locked;
+      f.layers.push(nl);
+    });
+    if(!f.layers.length) f.layers.push(newLayer('图层 1'));
+    q.frames.push(f); q.sel.frame = q.frames.length-1; q.sel.layer = p.sel.layer;
+    clampSel(q);
+  });
+  const deleteFrame = (p, fi) => act(p,'删除帧', q => {
+    if(q.frames.length <= 1) return false;
+    q.frames.splice(fi,1);
+    q.sel.frame = clamp(fi,0,q.frames.length-1);
+  });
+  function moveFrame(p, from, to){
+    const len = p.frames.length;
+    if(from<0 || from>=len || to<0 || to>=len || from===to) return p;
+    return act(p,'帧排序', q => {
+      const [x] = q.frames.splice(from,1);
+      q.frames.splice(to,0,x);
+      q.sel.frame = to;
+    });
+  }
+  const duplicateFrame = (p, fi) => act(p,'复制帧', q => {
+    const i = clamp(fi,0,q.frames.length-1);
+    const copy = reid(clone(q.frames[i]));
+    copy.name = q.frames[i].name + ' 副本';
+    q.frames.splice(i+1,0,copy);
+    q.sel.frame = i+1;
+  });
+  const setFrameDuration = (p, fi, ms) => act(p,'帧时长', q => {
+    q.frames[fi].duration = clampDur(ms);
+  });
+  const renameFrame = (p, fi, name) => act(p,'重命名帧', q => {
+    q.frames[fi].name = String(name||('帧 '+(fi+1))).slice(0,40);
+  });
+  const setLoop = (p, v) => act(p,'循环开关', q => { q.loop = !!v; });
+
+  /* ---------- 像素绘制 ---------- */
+  const beginStroke = p => {
+    const l = curLayer(p);
+    if(!l || l.locked) return p;
+    p._strokeSnap = clone(strip(p));  // 首个真实落笔时才入历史
+    return p;
+  };
+  const endStroke = p => {
+    p._strokeSnap = null;
+    return p;
+  };
+  // 手势类操作（滑块等）结束时若无变化，丢弃起始快照
+  const gestureEnd = p => {
+    const snap = p._gestureSnap;
+    if(snap){
+      const cur = JSON.stringify(strip(p));
+      if(cur === JSON.stringify(snap) && p._past.length){
+        const last = p._past[p._past.length-1];
+        if(last.snap === snap) p._past.pop();
+      }
+      p._gestureSnap = null;
+    }
+    return p;
+  };
+  const strokePixel = (p, x, y, val) => {
+    const l = curLayer(p);
+    if(!l || l.locked) return p;
+    x = x|0; y = y|0;
+    if(x<0||y<0||x>=N||y>=N) return p;
+    const i = y*N+x;
+    if(l.pixels[i] === val) return p;   // 同值拖过不重复记
+    if(p._strokeSnap){                  // 笔画首次生效 → 延迟入栈
+      p._past.push({label:'绘制', snap:p._strokeSnap});
+      if(p._past.length > HISTORY_LIMIT) p._past.shift();
+      p._future.length = 0;
+      p._strokeSnap = null;
+    }
+    l.pixels[i] = val;
+    return p;
+  };
+  function fillAt(p, sx, sy, color){
+    const l = curLayer(p);
+    if(!l || l.locked) return p;
+    sx|=0; sy|=0;
+    if(sx<0||sy<0||sx>=N||sy>=N) return p;
+    return act(p,'填充', q => {
+      const px = curLayer(q).pixels;
+      const target = px[sy*N+sx];
+      if(target === color) return false;
+      const stack=[[sx,sy]];
+      while(stack.length){
+        const [x,y] = stack.pop(), i = y*N+x;
+        if(px[i] !== target) continue;
+        px[i] = color;
+        if(x>0) stack.push([x-1,y]);
+        if(x<N-1) stack.push([x+1,y]);
+        if(y>0) stack.push([x,y-1]);
+        if(y<N-1) stack.push([x,y+1]);
+      }
+    });
+  }
+
+  /* ---------- 关键帧 ---------- */
+  const qt = t => clamp(Math.round(t*24)/24, 0, 1);
+  function sortedChanKeys(layer, ch){
+    return layer.keys.filter(k=>k.ch===ch).sort((a,b)=>a.t-b.t);
+  }
+  function findKey(layer, ch, t){
+    return layer.keys.find(k=>k.ch===ch && Math.abs(k.t-t)<1e-9) || null;
+ }
+  function upsertKey(layer, ch, t, vRaw){
+    t = qt(t);
+    let k = findKey(layer, ch, t);
+    const v = sanitizeChannel(ch, vRaw);
+    if(k){ k.v = v; return k; }
+    k = {ch, t, v, ease:'linear'};
+    layer.keys.push(k);
+    layer.keys.sort((a,b)=> a.t-b.t || a.ch.localeCompare(b.ch));
+    return k;
+  }
+  function deleteKeyAt(layer, ch, t){
+    const i = layer.keys.findIndex(k=>k.ch===ch && Math.abs(k.t - t)<1e-9);
+    if(i>=0) layer.keys.splice(i,1);
+    return i>=0;
+  }
+  function moveKey(layer, ch, oldT, newT){
+    const k = findKey(layer,ch,oldT);
+    if(!k) return false;
+    const nt = qt(newT);
+    if(Math.abs(nt-oldT)<1e-9) return false;
+    if(findKey(layer,ch,nt)) return false; // 落点已有同通道关键帧
+    k.t = nt;
+    layer.keys.sort((a,b)=>a.t-b.t || a.ch.localeCompare(b.ch));
+    return true;
+  }
+  function setKeyEase(layer, ch, t, ease){
+    const k = findKey(layer,ch,t);
+    if(k && EASINGS[ease]) k.ease = ease;
+    return !!k;
+  }
+  function sanitizeChannel(ch, v){
+    v = +v;
+    if(!isFinite(v)) v = DEFAULTS[ch];
+    if(ch==='scale') v = clamp(v, 0, 10);
+    else if(ch==='op') v = clamp(v, 0, 1);
+    else if(ch==='rot') v = clamp(v, -720, 720);
+    else v = clamp(v, -320, 320); // x/y px
+    return v;
+  }
+
+  const toggleKey = (p, fi, li, ch, t) => act(p,'关键帧', q => {
+    const layer = q.frames[fi].layers[li];
+    t = qt(t);
+    const existing = findKey(layer, ch, t);
+    if(existing){ deleteKeyAt(layer,ch,t); }
+    else { upsertKey(layer, ch, t, evalLayerAt(layer,t)[ch]); }
+  });
+  function gestureBegin(p, label){
+    const snap = clone(strip(p));
+    p._gestureSnap = snap;
+    p._past.push({label:label||'编辑', snap});
+    if(p._past.length > HISTORY_LIMIT) p._past.shift();
+    p._future.length = 0;
+    return p;
+  }
+  // 数值条拖动：按下即打点（若已有则改值），moveKey/数值修改的历史在 gesture 中合并
+  function keyGestureBegin(p, fi, li, ch, t){
+    const layer = p.frames[fi].layers[li];
+    t = qt(t);
+    p._gesture = {fi,li,ch,t,changed:false,startT:t};
+    gestureBegin(p,'调整关键帧');
+    const existed = !!findKey(layer,ch,t);
+    if(!existed) upsertKey(layer,ch,t,evalLayerAt(layer,t)[ch]);
+    // 自动打点算变化；仅点按已有关键帧而未改动则不入栈
+    p._gesture.changed = !existed;
+    return p;
+  }
+  function keyGestureValue(p, v){
+    const g = p._gesture; if(!g) return p;
+    const layer = p.frames[g.fi].layers[g.li];
+    const old = upsertKey(layer, g.ch, g.t, v).v;
+    if(old !== undefined) g.changed = true;
+    return p;
+  }
+  function keyGestureTime(p, newT){
+    const g = p._gesture; if(!g) return p;
+    const layer = p.frames[g.fi].layers[g.li];
+    const ok = moveKey(layer, g.ch, g.t, newT);
+    if(ok){ g.t = qt(newT); g.changed = true; }
+    return ok;
+  }
+  const keyGestureEnd = p => {
+    if(p._gesture && !p._gesture.changed && p._past.length) p._past.pop();
+    p._gesture = null; return p;
+  };
+  const keyGestureCancel = p => {
+    // Esc：恢复手势前快照
+    if(!p._gesture) return p;
+    if(p._past.length){ p._future.push({label:'重做',snap:clone(strip(p))}); restore(p, p._past.pop().snap); }
+    p._gesture = null;
+    return p;
+  };
+
+  /* ---------- 补间求值 ---------- */
+  function evalLayerAt(layer, t){
+    t = clamp(+t||0, 0, 1);
+    const out = {};
+    for(const ch of CHANNELS){
+      const ks = sortedChanKeys(layer,ch);
+      if(!ks.length){ out[ch] = DEFAULTS[ch]; continue; }
+      if(t <= ks[0].t){ out[ch] = ks[0].v; continue; }
+      if(t >= ks[ks.length-1].t){ out[ch] = ks[ks.length-1].v; continue; }
+      let i=0;
+      while(i < ks.length-1 && ks[i+1].t <= t) i++;
+      const a = ks[i], b = ks[i+1];
+      let u = (t - a.t) / ((b.t - a.t) || 1);
+      u = (EASINGS[b.ease] || EASINGS.linear)(u);
+      out[ch] = lerp(a.v, b.v, u);
+    }
+    return out;
+  }
+  // 当前时刻该通道"出点关键帧"（缓动用），无则 null
+  function outgoingKey(layer, ch, t){
+    const ks = sortedChanKeys(layer,ch);
+    for(let i=0;i<ks.length-1;i++){
+      if(t >= ks[i].t && t < ks[i+1].t) return ks[i+1];
+    }
+    return null;
+  }
+
+  /* ---------- 时间线采样 ---------- */
+  // 时长在写入与反序列化时已钳制，这里直接读取（采样热路径）
+  const frameDuration = f => f.duration;
+  function totalDuration(p){
+    return p.frames.reduce((s,f)=>s+frameDuration(f),0);
+  }
+  function frameStartAt(p, fi){
+    let ms = 0;
+    for(let i=0;i<fi && i<p.frames.length;i++) ms += frameDuration(p.frames[i]);
+    return ms;
+  }
+  function sampleAt(p, ms){
+    const total = totalDuration(p) || 1;
+    let t = +ms||0;
+    if(p.loop){
+      t = ((t % total) + total) % total;
+      if(t >= total - 1e-9) t = 0; // 循环接缝归一到首帧
+    }
+    else t = clamp(t, 0, Math.max(0,total-0.001));
+    let acc = 0;
+    for(let i=0;i<p.frames.length;i++){
+      const d = frameDuration(p.frames[i]);
+      if(t < acc + d || i === p.frames.length-1)
+        return {frameIndex:i, localT:clamp((t-acc)/d,0,1), time:t, total};
+      acc += d;
+    }
+    return {frameIndex:0, localT:0, time:0, total};
+  }
+  function exportSamples(p, fps){
+    fps = clamp(+fps||24,1,30);
+    const total = totalDuration(p);
+    const n = Math.max(1, Math.round(total/1000*fps));
+    const out = [];
+    for(let i=0;i<n;i++) out.push(sampleAt(p, i*1000/fps));
+    return {fps, total, frames:out};
+  }
+  function packRect(count){
+    const cols = Math.ceil(Math.sqrt(count));
+    const rows = Math.ceil(count/cols);
+    return {cols, rows};
+  }
+
+  /* ---------- 持久化 / 迁移 / 校验 ---------- */
+  function serialize(p){
+    return JSON.stringify(strip(p));
+  }
+  function sanitizeProject(d){
+    const p = newProject();
+    if(!d || typeof d !== 'object' || !Array.isArray(d.frames) || !d.frames.length) return null;
+    p.fps = clamp(d.fps|0 || 12, 1, 60);
+    p.loop = d.loop !== false;
+    p.frames = d.frames.filter(Boolean).map((f,i)=>{
+      const nf = newFrame(i, f && f.duration);
+      nf.name = (f && typeof f.name === 'string' && f.name) || ('帧 '+(i+1));
+      const layers = (f && Array.isArray(f.layers)) ? f.layers.filter(Boolean) : [];
+      nf.layers = layers.map((l,j)=>{
+        const nl = newLayer((l && l.name) || ('图层 '+(j+1)));
+        if(l){
+          nl.visible = l.visible !== false;
+          nl.locked = !!l.locked;
+          nl.opacity = clamp(isFinite(+l.opacity)?+l.opacity:1, 0, 1);
+          nl.blend = BLENDS.indexOf(l.blend)>=0 ? l.blend : 'source-over';
+          if(Array.isArray(l.pixels) && l.pixels.length){
+            for(let k=0;k<N*N;k++){
+              const c = l.pixels[k];
+              if(typeof c === 'string' && /^#[0-9a-f]{6}$/i.test(c)) nl.pixels[k] = c;
+            }
+          }
+          if(Array.isArray(l.keys)){
+            nl.keys = l.keys.filter(k=>k && CHANNELS.indexOf(k.ch)>=0 && isFinite(+k.t) && isFinite(+k.v))
+              .map(k=>({ch:k.ch, t:clamp(+k.t,0,1), v:sanitizeChannel(k.ch,+k.v),
+                        ease:EASINGS[k.ease]?k.ease:'linear'}));
+          }
+        }
+        return nl;
+      });
+      if(!nf.layers.length) nf.layers.push(newLayer('图层 1'));
+      return nf;
+    });
+    p.sel = {frame:clamp((d.sel&&d.sel.frame|0)||0,0,p.frames.length-1),
+             layer:clamp((d.sel&&d.sel.layer|0)||0,0,Math.max(0,p.frames[0].layers.length-1))};
+    // 重新分配 id 并保证唯一
+    p.frames.forEach(f=>{ f.id = uid('f'); f.layers.forEach(l=>{ l.id = uid('l'); }); });
+    return p;
+  }
+  // v1：{frames:[ (''|'#rrggbb')[256] ], fps}
+  function migrateV1(d){
+    if(!d || !Array.isArray(d.frames) || !d.frames.length) return null;
+    const p = newProject();
+    p.fps = clamp(d.fps|0 || 8, 1, 60);
+    p.frames = d.frames.map((cells,i)=>{
+      const f = newFrame(i, Math.round(1000/(d.fps||8)));
+      const l = newLayer('图层 1');
+      if(Array.isArray(cells)) cells.forEach((c,k)=>{
+        if(typeof c === 'string' && /^#[0-9a-f]{6}$/i.test(c)) l.pixels[k] = c;
+      });
+      f.layers = [l];
+      return f;
+    });
+    p.sel = {frame:0, layer:0};
+    p.frames.forEach(f=>{ f.id=uid('f'); f.layers.forEach(l=>l.id=uid('l')); });
+    return p;
+  }
+  function deserialize(str){
+    let d;
+    try { d = JSON.parse(str); } catch(e){ return null; }
+    let p = null;
+    if(d && d.version === 2) p = sanitizeProject(d);
+    if(!p) p = migrateV1(d);
+    if(p){
+      // 让后续新建 uid 不冲突
+      p.frames.forEach(f=>{ bumpUid(f.id); f.layers.forEach(l=>bumpUid(l.id)); });
+      p._past = []; p._future = [];
+    }
+    return p;
+  }
+  function attachHistory(p){ p._past = []; p._future = []; return p; }
+
+  /* ---------- APNG / PNG 编码（纯字节，供 Node 测试与浏览器导出共用） ---------- */
+  const CRC_TABLE = (()=>{
+    const t = new Uint32Array(256);
+    for(let n=0;n<256;n++){
+      let c = n;
+      for(let k=0;k<8;k++) c = (c&1) ? (0xEDB88320 ^ (c>>>1)) : (c>>>1);
+      t[n] = c>>>0;
+    }
+    return t;
+  })();
+  function crc32(bytes){
+    let c = 0xFFFFFFFF;
+    for(let i=0;i<bytes.length;i++) c = CRC_TABLE[(c ^ bytes[i]) & 0xFF] ^ (c>>>8);
+    return (c ^ 0xFFFFFFFF)>>>0;
+  }
+  function adler32(bytes){
+    let a=1,b=0;
+    for(let i=0;i<bytes.length;i++){ a=(a+bytes[i])%65521; b=(b+a)%65521; }
+    return ((b<<16)|a)>>>0;
+  }
+  function u32(n){ return [(n>>>24)&255,(n>>>16)&255,(n>>>8)&255,n&255]; }
+  function u16(n){ return [(n>>>8)&255,n&255]; }
+  // 无压缩 zlib（stored deflate），浏览器与 Node 均可解
+  function zlibStore(input){
+    const parts = [new Uint8Array([0x78,0x01])];
+    let off = 0;
+    while(true){
+      const chunk = input.subarray(off, off+65535);
+      const last = off + chunk.length >= input.length ? 1 : 0;
+      const len = chunk.length, nlen = 0xFFFF - len;
+      const head = new Uint8Array(5);
+      head[0]=last;
+      head[1]=len&255; head[2]=(len>>>8)&255;
+      head[3]=nlen&255; head[4]=(nlen>>>8)&255;
+      parts.push(head, chunk);
+      off += chunk.length;
+      if(last) break;
+    }
+    const ad = adler32(input);
+    parts.push(new Uint8Array(u32(ad)));
+    const total = parts.reduce((s,x)=>s+x.length,0);
+    const out = new Uint8Array(total);
+    let o=0;
+    parts.forEach(x=>{ out.set(x,o); o+=x.length; });
+    return out;
+  }
+  function chunk(type, data){
+    const tb = [];
+    for(let i=0;i<4;i++) tb.push(type.charCodeAt(i));
+    const body = new Uint8Array(4 + (data?data.length:0));
+    tb.forEach((c,i)=>body[i]=c);
+    if(data) body.set(data,4);
+    const crc = crc32(body);
+    const out = new Uint8Array(4 + body.length + 4);
+    out.set(u32(body.length-4),0);
+    out.set(body,4);
+    out.set(u32(crc),4+body.length);
+    return out;
+  }
+  function concatBytes(arrs){
+    const total = arrs.reduce((s,a)=>s+a.length,0);
+    const out = new Uint8Array(total);
+    let o=0;
+    arrs.forEach(a=>{ out.set(a,o); o+=a.length; });
+    return out;
+  }
+  function rawScanlines(w,h,rgba){
+    const stride = w*4;
+    const raw = new Uint8Array(h*(stride+1));
+    for(let y=0;y<h;y++){
+      raw[y*(stride+1)] = 0;
+      raw.set(rgba.subarray(y*stride,(y+1)*stride), y*(stride+1)+1);
+    }
+    return raw;
+  }
+  function encodePNG(w,h,rgba,zlibFn){
+    const ihdr = new Uint8Array([...u32(w),...u32(h),8,6,0,0,0]);
+    return concatBytes([
+      new Uint8Array([137,80,78,71,13,10,26,10]),
+      chunk('IHDR', ihdr),
+      chunk('IDAT', (zlibFn||zlibStore)(rawScanlines(w,h,rgba))),
+      chunk('IEND', null)
+    ]);
+  }
+  // frames: 数组或（异步）可迭代对象；zlibFn 可为异步函数
+  async function encodeAPNGAsync(w,h,frames,loopCount,zlibFn){
+    const compress = zlibFn || zlibStore;
+    const list = [];
+    for await (const fr of frames) list.push(fr);
+    const sig = new Uint8Array([137,80,78,71,13,10,26,10]);
+    const ihdr = new Uint8Array([...u32(w),...u32(h),8,6,0,0,0]);
+    const actl = new Uint8Array([...u32(list.length), ...u32(clamp(loopCount|0,0,0xFFFF))]);
+    const parts = [sig, chunk('IHDR',ihdr), chunk('acTL',actl)];
+    for(let i=0;i<list.length;i++){
+      const fr = list[i];
+      const delayNum = clamp(Math.round(fr.delayMs),0,65535) || 1;
+      const fc = new Uint8Array([
+        ...u32(i===0?0:2*i-1),
+        ...u32(w), ...u32(h), ...u32(0), ...u32(0),
+        ...u16(delayNum), ...u16(1000), 0, 0
+      ]);
+      parts.push(chunk('fcTL',fc));
+      const z = await compress(rawScanlines(w,h,fr.rgba));
+      if(i===0) parts.push(chunk('IDAT',z));
+      else parts.push(chunk('fdAT', concatBytes([new Uint8Array(u32(2*i)), z])));
+    }
+    parts.push(chunk('IEND',null));
+    return concatBytes(parts);
+  }
+  function encodeAPNG(w,h,frames,loopCount){
+    // 同步版本：无压缩 deflate（Node 测试与老环境兜底用）
+    const sig = new Uint8Array([137,80,78,71,13,10,26,10]);
+    const ihdr = new Uint8Array([...u32(w),...u32(h),8,6,0,0,0]);
+    const actl = new Uint8Array([...u32(frames.length), ...u32(clamp(loopCount|0,0,0xFFFF))]);
+    const parts = [sig, chunk('IHDR',ihdr), chunk('acTL',actl)];
+    frames.forEach((fr,i)=>{
+      const delayNum = clamp(Math.round(fr.delayMs),0,65535) || 1;
+      const fc = new Uint8Array([
+        ...u32(i===0?0:2*i-1),
+        ...u32(w), ...u32(h), ...u32(0), ...u32(0),
+        ...u16(delayNum), ...u16(1000), 0, 0
+      ]);
+      parts.push(chunk('fcTL',fc));
+      const z = zlibStore(rawScanlines(w,h,fr.rgba));
+      if(i===0) parts.push(chunk('IDAT',z));
+      else parts.push(chunk('fdAT', concatBytes([new Uint8Array(u32(2*i)), z])));
+    });
+    parts.push(chunk('IEND',null));
+    return concatBytes(parts);
+  }
+
+  global.PL = {
+    N, SIZE, HISTORY_LIMIT, DUR_MIN, DUR_MAX,
+    CHANNELS, CH_LABEL, DEFAULTS, EASINGS, BLENDS, BLEND_LABEL,
+    newProject, newLayer, newFrame, attachHistory,
+    curFrame, curLayer, clampSel, clamp, clampDur,
+    act, undo, redo, gestureBegin, gestureEnd,
+    addLayer, deleteLayer, moveLayer, duplicateLayer, renameLayer,
+    toggleVisible, toggleLocked, setLayerOpacity, setBlend,
+    addFrame, deleteFrame, moveFrame, duplicateFrame, setFrameDuration, renameFrame,
+    setLoop,
+    beginStroke, endStroke, strokePixel, fillAt,
+    qt, findKey, sortedChanKeys, upsertKey, deleteKeyAt, moveKey, setKeyEase,
+    toggleKey, keyGestureBegin, keyGestureValue, keyGestureTime, keyGestureEnd, keyGestureCancel,
+    evalLayerAt, outgoingKey,
+    totalDuration, frameStartAt, sampleAt, exportSamples, packRect,
+    serialize, deserialize, sanitizeProject, migrateV1,
+    encodePNG, encodeAPNG, encodeAPNGAsync, crc32, adler32, zlibStore, chunk, u32,
+    _setUidc:v=>{uidc=v;}
+  };
+})(typeof window !== 'undefined' ? window : globalThis);
+/*MODEL*/
+</script>
+
+<script>
+/*===================== UI（浏览器环境） =====================*/
+(function(){
+'use strict';
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const M = window.PL, N = M.N;
+const STORE_KEY = 'pixelLoomProject.v2';
+
+/* ---------- 状态 ---------- */
+let P, loadedFrom = null;
+{
+  const raw = localStorage.getItem(STORE_KEY) || localStorage.getItem('pixelLoom');
+  const restored = raw && M.deserialize(raw);
+  P = M.attachHistory(restored || M.attachHistory(M.newProject()));
+  if(restored) loadedFrom = localStorage.getItem(STORE_KEY) ? 'v2' : 'v1';
+}
+let playhead = 0;            // 全局时间 ms
+let playing = false, rafId = null, lastTs = 0;
+let strokeActive = false;
+let curLocalT = 0;          // 最近一次采样到当前选中帧的 localT（供打点）
+let pendingSeek = false;    // 用户搓条操作中，不被播放覆盖
+
+/* ---------- 小工具 ---------- */
+function toast(msg, warn){
+  const el = $('#status');
+  el.textContent = msg;
+  el.classList.toggle('warn', !!warn);
+  clearTimeout(toast._t);
+  toast._t = setTimeout(()=>{el.textContent='';}, 2600);
+}
+const fi = () => P.sel.frame, li = () => P.sel.layer;
+const curL = () => M.curLayer(P), curF = () => M.curFrame(P);
+function afterChange(opts){
+  opts = opts || {};
+  if(!opts.noSave) scheduleSave();
+  renderAll(opts);
+}
+let saveTimer = 0;
+function scheduleSave(){
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(()=>{
+    try{ localStorage.setItem(STORE_KEY, M.serialize(P)); }catch(e){}
+  }, 400);
+}
+
+/* ---------- 渲染：合成到任意 canvas ---------- */
+// 将 frame 在 localT 的全部图层绘制到 ctx（逻辑坐标系 SIZE×SIZE，可预先 scale）
+function composeFrame(ctx, frame, localT, darkBg){
+  const S = M.SIZE;
+  ctx.save();
+  ctx.imageSmoothingEnabled = false;
+  ctx.clearRect(0,0,S,S);
+  if(darkBg){ ctx.fillStyle = '#202433'; ctx.fillRect(0,0,S,S); }
+  const cell = S / N;
+  for(let k = 0; k < frame.layers.length; k++){
+    const layer = frame.layers[k];
+    if(!layer.visible) continue;
+    const ch = M.evalLayerAt(layer, localT);
+    const eff = layer.opacity * ch.op;
+    if(eff <= 0.001) continue;
+    ctx.save();
+    ctx.globalAlpha = eff;
+    try{ ctx.globalCompositeOperation = layer.blend; }catch(_){ ctx.globalCompositeOperation = 'source-over'; }
+    ctx.translate(S/2 + ch.x, S/2 + ch.y);
+    ctx.rotate(ch.rot * Math.PI/180);
+    ctx.scale(ch.scale, ch.scale);
+    ctx.translate(-S/2, -S/2);
+    ctx.fillStyle = '#000'; // 占位，下面逐格设置
+    for(let y=0;y<N;y++) for(let x=0;x<N;x++){
+      const c = layer.pixels[y*N+x];
+      if(!c) continue;
+      ctx.fillStyle = c;
+      ctx.fillRect(x*cell, y*cell, cell, cell);
+    }
+    ctx.restore();
+  }
+  ctx.restore();
+}
+function makeCompositeCanvas(frame, localT, scale, darkBg){
+  const c = document.createElement('canvas');
+  c.width = c.height = M.SIZE * (scale||1);
+  const x = c.getContext('2d');
+  x.scale(scale||1, scale||1);
+  composeFrame(x, frame, localT, darkBg);
+  return c;
+}
+function thumbCanvas(frame){
+  const c = document.createElement('canvas');
+  c.width = c.height = N;
+  const x = c.getContext('2d');
+  x.imageSmoothingEnabled = false;
+  for(let k=0;k<frame.layers.length;k++){
+    const l = frame.layers[k];
+    if(!l.visible) continue;
+    for(let p=0;p<N*N;p++) if(l.pixels[p]){
+      x.fillStyle = l.pixels[p];
+      x.fillRect(p%N, (p/N)|0, 1, 1);
+    }
+  }
+  return c;
+}
+
+/* ---------- 舞台 ---------- */
+const stage = $('#canvas'), sctx = stage.getContext('2d');
+function renderStage(){
+  const sm = M.sampleAt(P, playhead);
+  curLocalT = (sm.frameIndex === fi()) ? sm.localT : 0;
+  composeFrame(sctx, P.frames[sm.frameIndex], sm.localT, true);
+  const l = curL();
+  $('#canvaswrap').classList.toggle('locked', !!(l && l.locked));
+  $('#timeread').textContent = (playhead/1000).toFixed(2)+'s';
+  buildScrub();
+  updateScrub(sm);
+  syncFramePlaying(sm.frameIndex);
+}
+// 播放/搓条中的轻量刷新：只重绘画布、播放头与通道数值，不重建 DOM
+function renderStageLight(){
+  const sm = M.sampleAt(P, playhead);
+  curLocalT = (sm.frameIndex === fi()) ? sm.localT : 0;
+  composeFrame(sctx, P.frames[sm.frameIndex], sm.localT, true);
+  $('#timeread').textContent = (playhead/1000).toFixed(2)+'s';
+  updateScrub(sm);
+  syncFramePlaying(sm.frameIndex);
+  updateChannelValues();
+}
+function updateChannelValues(){
+  const l = curL(); if(!l) return;
+  const ch = M.evalLayerAt(l, curLocalT);
+  const box = $('#channels');
+  M.CHANNELS.forEach(c=>{
+    const dia = box.querySelector(`.dia[data-ch="${c}"]`);
+    if(dia) dia.classList.toggle('on', !!M.findKey(l,c,M.qt(curLocalT)));
+    const r = box.querySelector(`input[data-ch="${c}"]`);
+    if(r && document.activeElement !== r) r.value = ch[c];
+    const v = box.querySelector(`[data-v="${c}"]`);
+    if(v) v.textContent = (c==='op'||c==='scale') ? (+ch[c]).toFixed(2) : Math.round(ch[c]);
+  });
+  const ok = M.outgoingKey(l,'x',curLocalT);
+  if(ok && !$('#ease').disabled){ /* 播放中不改用户选择 */ }
+}
+
+/* ---------- 工具 / 颜色 ---------- */
+let tool = 'pencil', color = '#ff7aa8';
+const PALETTE = ['#ff7aa8','#77e1ba','#ffd166','#6a8cff','#b18cff','#ffffff','#11131a','#f97316'];
+$('#swatches').innerHTML = PALETTE.map((c,i)=>
+  `<button class="sw ${i===0?'sel':''}" data-c="${c}" style="background:${c}" title="${c}"></button>`).join('');
+$('#swatches').addEventListener('click', e=>{
+  const b = e.target.closest('.sw'); if(!b) return;
+  color = b.dataset.c;
+  $('#custom').value = color;
+  $$('.sw').forEach(x=>x.classList.toggle('sel', x===b));
+});
+$('#custom').addEventListener('input', e=>{
+  color = e.target.value;
+  $$('.sw').forEach(x=>x.classList.toggle('sel', x.dataset.c===color));
+});
+$$('.tool').forEach(b=>b.addEventListener('click',()=>setTool(b.dataset.tool)));
+function setTool(t){
+  tool = t;
+  $$('.tool').forEach(x=>x.classList.toggle('active', x.dataset.tool===t));
+}
+
+function eventCell(e){
+  const r = stage.getBoundingClientRect();
+  const x = Math.floor((e.clientX-r.left)/r.width*N);
+  const y = Math.floor((e.clientY-r.top)/r.height*N);
+  return (x<0||y<0||x>=N||y>=N) ? null : {x,y};
+}
+function canPaint(){
+  const l = curL();
+  if(!l){ toast('没有可选图层',true); return false; }
+  if(l.locked){ toast('🔒 图层已锁定，无法绘制',true); return false; }
+  if(!l.visible){ toast('该图层已隐藏，无法绘制',true); return false; }
+  return true;
+}
+stage.addEventListener('pointerdown', e=>{
+  const cell = eventCell(e); if(!cell) return;
+  e.preventDefault();
+  stage.setPointerCapture && stage.setPointerCapture(e.pointerId);
+  const l = curL(); if(!l) return;
+  if(tool === 'picker'){
+    const c = l.pixels[cell.y*N+cell.x];
+    if(c){ color = c; $('#custom').value = c; $$('.sw').forEach(x=>x.classList.toggle('sel',x.dataset.c===c)); toast('取色 '+c); }
+    return;
+  }
+  if(!canPaint()) return;
+  if(tool === 'fill'){
+    M.fillAt(P, cell.x, cell.y, color);
+    afterChange();
+    return;
+  }
+  M.beginStroke(P);
+  strokeActive = true;
+  applyStroke(cell, true);
+});
+stage.addEventListener('pointermove', e=>{
+  if(!strokeActive) return;
+  const cell = eventCell(e); if(cell) applyStroke(cell, false);
+});
+window.addEventListener('pointerup', ()=>{
+  if(strokeActive){
+    strokeActive = false;
+    M.endStroke(P);
+    afterChange();
+  }
+});
+function applyStroke(cell, first){
+  const val = tool === 'eraser' ? null : color;
+  M.strokePixel(P, cell.x, cell.y, val);
+  renderStageLight();
+}
+
+/* ---------- 图层面板 ---------- */
+function renderLayers(){
+  const box = $('#layerlist');
+  const f = curF();
+  box.innerHTML = '';
+  // 顶到顶的显示顺序 = 数组逆序
+  f.layers.slice().reverse().forEach(layer=>{
+    const idx = f.layers.indexOf(layer);
+    const row = document.createElement('div');
+    row.className = 'layerrow' + (idx===li()?' active':'') + (layer.visible?'':' hidden');
+    row.draggable = false;
+    row.dataset.li = idx;
+    row.innerHTML =
+      `<span class="grip" title="拖拽排序">⠿</span>
+       <span class="lname">${escapeHtml(layer.name)}</span>
+       <button class="vis ${layer.visible?'on':''}" title="显示/隐藏">${layer.visible?'👁':'🚫'}</button>
+       <button class="lock ${layer.locked?'locked':''}" title="锁定/解锁">${layer.locked?'🔒':'🔓'}</button>`;
+    box.appendChild(row);
+  });
+  // 外观控件
+  const l = curL();
+  $('#layerOpacity').value = l ? l.opacity : 1;
+  $('#opLabel').textContent = l ? Math.round(l.opacity*100)+'%' : '';
+  $('#blend').value = l ? l.blend : 'source-over';
+  renderChannels();
+}
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+// 混合模式下拉只构建一次
+$('#blend').innerHTML = M.BLENDS.map(b=>`<option value="${b}">${M.BLEND_LABEL[b]}</option>`).join('');
+
+$('#layerlist').addEventListener('click', e=>{
+  const row = e.target.closest('.layerrow'); if(!row) return;
+  const idx = +row.dataset.li;
+  if(e.target.closest('.vis')){ M.toggleVisible(P, idx); afterChange(); return; }
+  if(e.target.closest('.lock')){ M.toggleLocked(P, idx); afterChange(); return; }
+  if(idx !== li()){ P.sel.layer = idx; renderAll(); }
+});
+$('#layerlist').addEventListener('dblclick', e=>{
+  const row = e.target.closest('.layerrow'); if(!row) return;
+  const idx = +row.dataset.li, l = curF().layers[idx];
+  const name = prompt('图层名称', l.name);
+  if(name != null){ M.renameLayer(P, idx, name.trim()); afterChange(); }
+});
+
+// 图层拖拽排序（触屏可用：按住 grip 拖动手势）
+// 显示顺序与数组相反：面板顶行 = 数组末尾
+(function bindLayerSort(){
+  const box = $('#layerlist');
+  let press = null, dragging = false, suppressClick = false;
+  box.addEventListener('pointerdown', e=>{
+    const grip = e.target.closest('.grip'); if(!grip) return;
+    press = {x:e.clientX,y:e.clientY,row:e.target.closest('.layerrow'),moved:false};
+  });
+  box.addEventListener('pointermove', e=>{
+    if(!press || dragging) return;
+    if(Math.hypot(e.clientX-press.x,e.clientY-press.y) > 6){
+      dragging = true; press.moved = true; press.row.classList.add('dragging');
+    }
+  });
+  window.addEventListener('pointerup', e=>{
+    if(!press) return;
+    const wasDragging = dragging;
+    if(wasDragging){
+      const rows = $$('#layerlist .layerrow');   // 顶→底 = 数组末→首
+      const n = P.frames[fi()].layers.length;
+      // 落点在第几行（显示序 0=顶）
+      let displayRank = rows.length; // 超过最后一行 → 最底
+      for(let k=0;k<rows.length;k++){
+        const b = rows[k].getBoundingClientRect();
+        if(e.clientY < b.top + b.height/2){ displayRank = k; break; }
+      }
+      const from = +press.row.dataset.li;
+      const to = n - 1 - displayRank;              // 显示序 → 数组下标
+      if(to !== from){
+        M.moveLayer(P, from, M.clamp(to,0,n-1));
+        afterChange();
+      }
+      press.row.classList.remove('dragging');
+      suppressClick = true; setTimeout(()=>suppressClick=false,0);
+    }
+    press = null; dragging = false;
+  });
+  box.addEventListener('click', e=>{
+    if(suppressClick){ e.stopImmediatePropagation(); e.preventDefault(); }
+  }, true);
+})();
+
+$('#addLayer').addEventListener('click', ()=>{ M.addLayer(P); afterChange(); });
+$('#dupLayer').addEventListener('click', ()=>{ M.duplicateLayer(P, li()); afterChange(); });
+$('#delLayer').addEventListener('click', ()=>{
+  if(curF().layers.length<=1){ toast('至少保留一个图层',true); return; }
+  M.deleteLayer(P, li()); afterChange();
+});
+$('#upLayer').addEventListener('click', ()=>{
+  // 在显示序中上移 = 数组下标 +1
+  M.moveLayer(P, li(), Math.min(curF().layers.length-1, li()+1)); afterChange();
+});
+$('#downLayer').addEventListener('click', ()=>{
+  M.moveLayer(P, li(), Math.max(0, li()-1)); afterChange();
+});
+let layerOpGesture = false;
+$('#layerOpacity').addEventListener('pointerdown', ()=>{ M.gestureBegin(P,'图层不透明度'); layerOpGesture=true; });
+$('#layerOpacity').addEventListener('input', e=>{
+  const l = curL(); if(!l) return;
+  l.opacity = M.clamp(+e.target.value,0,1);
+  renderStage(); $('#opLabel').textContent = Math.round(l.opacity*100)+'%';
+});
+window.addEventListener('pointerup', ()=>{
+  if(layerOpGesture){ layerOpGesture=false; M.gestureEnd(P); afterChange(); }
+});
+$('#blend').addEventListener('change', e=>{ M.setBlend(P, li(), e.target.value); afterChange(); });
+
+/* ---------- 变换通道面板 ---------- */
+const CH_RANGE = {x:[-160,160,1],y:[-160,160,1],scale:[0,3,0.01],rot:[-360,360,1],op:[0,1,0.01]};
+function renderChannels(){
+  const box = $('#channels');
+  const l = curL(); if(!l){ box.innerHTML=''; return; }
+  const ch = M.evalLayerAt(l, curLocalT);
+  if(box.dataset.built !== fi()+':'+li()){
+    box.innerHTML = M.CHANNELS.map(c=>`
+      <div class="chrow">
+        <span class="chl">${M.CH_LABEL[c]}</span>
+        <button class="dia" data-ch="${c}" title="在当前时刻打/删关键帧">◆</button>
+        <input type="range" data-ch="${c}" min="${CH_RANGE[c][0]}" max="${CH_RANGE[c][1]}" step="${CH_RANGE[c][2]}">
+        <span class="chv" data-v="${c}"></span>
+        <button class="chgo" data-prev="${c}" title="上一关键帧">‹</button>
+      </div>`).join('');
+    box.dataset.built = fi()+':'+li();
+  }
+  M.CHANNELS.forEach(c=>{
+    const keyed = !!M.findKey(l, c, M.qt(curLocalT));
+    const dia = box.querySelector(`.dia[data-ch="${c}"]`);
+    dia.classList.toggle('on', keyed);
+    const r = box.querySelector(`input[data-ch="${c}"]`);
+    if(document.activeElement !== r) r.value = ch[c];
+    box.querySelector(`[data-v="${c}"]`).textContent =
+      (c==='op'||c==='scale') ? (+ch[c]).toFixed(2) : Math.round(ch[c]);
+  });
+  // 缓动下拉：跟随当前帧/通道区间的出点关键帧 ease
+  const ok = M.outgoingKey(l, 'x', curLocalT);
+  if(ok){ $('#ease').value = ok.ease; $('#ease').disabled = false; }
+  else $('#ease').disabled = true;
+}
+$('#channels').addEventListener('click', e=>{
+  const l = curL(); if(!l) return;
+  const d = e.target.closest('.dia');
+  if(d){ M.toggleKey(P, fi(), li(), d.dataset.ch, curLocalT); afterChange(); return; }
+  const prev = e.target.closest('[data-prev]');
+  if(prev){
+    const ch = prev.dataset.prev;
+    const times = M.sortedChanKeys(l,ch).map(k=>k.t);
+    let t = null;
+    for(let i=times.length-1;i>=0;i--) if(times[i] < curLocalT - 1e-6){ t=times[i]; break; }
+    if(t===null && times.length) t = times[times.length-1]; // 循环跳到末尾
+    if(t!==null) seekToLocal(t);
+  }
+});
+let gestureRange = null;
+$('#channels').addEventListener('pointerdown', e=>{
+  const r = e.target.closest('input[type=range]'); if(!r) return;
+  gestureRange = r;
+  M.keyGestureBegin(P, fi(), li(), r.dataset.ch, curLocalT);
+});
+$('#channels').addEventListener('input', e=>{
+  const r = e.target.closest('input[type=range]'); if(!r) return;
+  if(!P._gesture) return; // 非拖拽（如键盘步进）由 change 统一提交
+  M.keyGestureValue(P, +r.value);
+  renderStageLight();
+});
+$('#channels').addEventListener('change', e=>{
+  const r = e.target.closest('input[type=range]'); if(!r) return;
+  if(r === gestureRange){ gestureRange = null; return; } // 拖拽松手产生的 change 已在手势里提交
+  if(P._gesture) return;
+  M.act(P,'调整关键帧', q=>{ // 键盘步进：自动打点并改值
+    const t = M.qt(curLocalT), l = q.frames[fi()].layers[li()];
+    if(!M.findKey(l,r.dataset.ch,t)) M.upsertKey(l,r.dataset.ch,t,M.evalLayerAt(l,t)[r.dataset.ch]);
+    M.upsertKey(l,r.dataset.ch,t,+r.value);
+  });
+  afterChange();
+});
+window.addEventListener('pointerup', ()=>{
+  // 通道数值条与搓条关键帧拖拽共用手势（搓条已 setPointerCapture，事件会冒泡到此）
+  if(P._gesture){ M.keyGestureEnd(P); afterChange(); }
+  setTimeout(()=>{ gestureRange = null; }, 0);
+});
+$('#ease').addEventListener('change', e=>{
+  // 作用于当前时刻所有通道的出点关键帧
+  const l = curL();
+  M.act(P,'缓动', q=>{
+    const ll = q.frames[fi()].layers[li()];
+    M.CHANNELS.forEach(c=>{ const ok=M.outgoingKey(ll,c,curLocalT); if(ok) M.setKeyEase(ll,c,ok.t,e.target.value); });
+  });
+  afterChange();
+});
+function seekToLocal(t){
+  let ms = M.frameStartAt(P, fi()) + t * curF().duration;
+  seekPlayhead(ms);
+}
+
+/* ---------- 搓条 / 播放 ---------- */
+const scrub = $('#scrub');
+const KEY_CLASS = {x:'ch-x',y:'ch-y',scale:'ch-scale',rot:'ch-rot',op:'ch-op'};
+function buildScrub(){
+  scrub.querySelectorAll('.seg,.key').forEach(s=>s.remove());
+  const total = M.totalDuration(P) || 1;
+  let acc = 0;
+  P.frames.forEach((f,i)=>{
+    const s = document.createElement('div');
+    s.className = 'seg' + (i===fi()?' cur':'');
+    s.style.left = (acc/total*100)+'%'; s.style.width = (f.duration/total*100)+'%';
+    s.title = f.name;
+    scrub.appendChild(s);
+    acc += f.duration;
+  });
+  const l = curL();
+  if(l){
+    const base = M.frameStartAt(P,fi()), dur = curF().duration;
+    M.CHANNELS.forEach(c=>{
+      M.sortedChanKeys(l,c).forEach(k=>{
+        const d = document.createElement('div');
+        d.className = 'key '+KEY_CLASS[c];
+        d.dataset.ch = c; d.dataset.t = k.t;
+        d.style.left = ((base + k.t*dur)/total*100)+'%';
+        d.title = M.CH_LABEL[c]+' @ '+Math.round(k.t*100)+'%';
+        scrub.appendChild(d);
+      });
+    });
+  }
+  $('#loop').checked = !!P.loop;
+}
+function updateScrub(sm){
+  const total = M.totalDuration(P) || 1;
+  $('#scrubHead').style.left = (sm.time/total*100)+'%';
+  const segs = scrub.querySelectorAll('.seg');
+  segs.forEach((s,i)=>s.classList.toggle('cur', i===fi()));
+}
+function seekPlayhead(ms){
+  const total = M.totalDuration(P);
+  playhead = P.loop ? ((ms%total)+total)%total : M.clamp(ms,0,total);
+  const sm = M.sampleAt(P, playhead);
+  if(sm.frameIndex !== fi()){ P.sel.frame = sm.frameIndex; renderAll(); }
+  else { renderStageLight(); }
+}
+let scrubbing = null;
+scrub.addEventListener('pointerdown', e=>{
+  const keyEl = e.target.closest('.key');
+  scrub.setPointerCapture && scrub.setPointerCapture(e.pointerId);
+  if(keyEl){
+    // 拖拽当前图层的关键帧改时间（限本帧区间）
+    const ch = keyEl.dataset.ch, t0 = +keyEl.dataset.t;
+    M.keyGestureBegin(P, fi(), li(), ch, t0);
+    scrubbing = {mode:'key', ch, el:keyEl};
+    keyEl.classList.add('dragging');
+  }else{
+    scrubbing = {mode:'seek'};
+    seekFromEvent(e);
+  }
+});
+scrub.addEventListener('pointermove', e=>{
+  if(!scrubbing) return;
+  if(scrubbing.mode === 'key'){
+    const sm = sampleFromEvent(e);
+    if(sm.frameIndex === fi()){
+      M.keyGestureTime(P, sm.localT);
+      if(P._gesture) scrubbing.el.dataset.t = P._gesture.t;
+      const total = M.totalDuration(P)||1;
+      const base = M.frameStartAt(P,fi());
+      scrubbing.el.style.left = ((base + P._gesture.t*curF().duration)/total*100)+'%';
+      $('#scrubHead').style.left = ((base + P._gesture.t*curF().duration)/total*100)+'%';
+      playhead = base + P._gesture.t*curF().duration;
+      renderStageLight();
+    }
+  }else{
+    seekFromEvent(e);
+  }
+});
+scrub.addEventListener('pointerup', ()=>{
+  if(scrubbing){
+    if(scrubbing.mode === 'key'){
+      scrubbing.el.classList.remove('dragging');
+      M.keyGestureEnd(P);
+      afterChange();
+    }
+    scrubbing = null;
+  }
+});
+function scrubX(e){
+  const r = scrub.getBoundingClientRect();
+  return M.clamp((e.clientX-r.left)/r.width,0,1);
+}
+function sampleFromEvent(e){
+  const ms = scrubX(e) * M.totalDuration(P);
+  return M.sampleAt(P, ms);
+}
+function seekFromEvent(e){
+  const sm = sampleFromEvent(e);
+  playhead = sm.time;
+  if(sm.frameIndex !== fi()){ P.sel.frame = sm.frameIndex; renderAll({keepPlay:true}); }
+  else renderStage();
+}
+$('#toStart').addEventListener('click', ()=>seekPlayhead(0));
+$('#play').addEventListener('click', togglePlay);
+$('#loop').addEventListener('change', e=>{ M.setLoop(P,e.target.checked); scheduleSave(); });
+function togglePlay(){
+  if(!playing && (!P.loop && playhead >= M.totalDuration(P) - 1)) playhead = 0; // 非循环播完后重看
+  playing = !playing;
+  $('#play').textContent = playing ? '⏸ 暂停' : '▶ 播放';
+  if(playing){
+    lastTs = 0;
+    rafId = requestAnimationFrame(tick);
+  }else if(rafId){ cancelAnimationFrame(rafId); rafId=null; }
+}
+function tick(ts){
+  if(!playing) return;
+  if(!lastTs) lastTs = ts;
+  let dt = ts - lastTs; lastTs = ts;
+  if(dt > 250) dt = 0; // 切后台后的跳变忽略
+  const total = M.totalDuration(P);
+  let nt = playhead + dt;
+  if(nt >= total){
+    if(P.loop) nt = nt % total;
+    else{ nt = total; togglePlay(); }
+  }
+  playhead = nt;
+  const sm = M.sampleAt(P, playhead);
+  if(sm.frameIndex !== fi()){
+    P.sel.frame = sm.frameIndex;
+    renderAll();
+  }else{
+    renderStageLight();
+  }
+  rafId = requestAnimationFrame(tick);
+}
+
+/* ---------- 帧时间线 ---------- */
+const flist = $('#framelist');
+function renderFrames(){
+  flist.innerHTML = '';
+  P.frames.forEach((f,i)=>{
+    const card = document.createElement('div');
+    card.className = 'framecard' + (i===fi()?' active':'');
+    card.dataset.fi = i;
+    const t = thumbCanvas(f);
+    t.className = 'thumb';
+    card.appendChild(t);
+    const name = document.createElement('div');
+    name.className = 'fname'; name.textContent = f.name;
+    card.appendChild(name);
+    const dur = document.createElement('input');
+    dur.className = 'fdur'; dur.type='number'; dur.min=M.DUR_MIN; dur.max=M.DUR_MAX; dur.step=10;
+    dur.value = f.duration; dur.title='时长 (ms)';
+    card.appendChild(dur);
+    const btns = document.createElement('div');
+    btns.className='fbtns';
+    btns.innerHTML = `<button class="fcopy" title="复制帧">⧉</button><button class="fdel" title="删除帧">🗑</button>`;
+    card.appendChild(btns);
+    flist.appendChild(card);
+  });
+}
+function syncFramePlaying(curIdx){
+  $$('.framecard').forEach((c,i)=>{
+    c.classList.toggle('playing', i===curIdx);
+    c.classList.toggle('active', i===fi());
+  });
+}
+flist.addEventListener('click', e=>{
+  if(suppressFrameClick) return; // 拖拽收尾的合成 click
+  const card = e.target.closest('.framecard'); if(!card) return;
+  const i = +card.dataset.fi;
+  if(e.target.closest('.fcopy')){ M.duplicateFrame(P, i); afterChange(); return; }
+  if(e.target.closest('.fdel')){
+    if(P.frames.length<=1){ toast('至少保留一帧',true); return; }
+    M.deleteFrame(P, i);
+    if(playhead > M.totalDuration(P)) playhead = 0;
+    afterChange(); return;
+  }
+  if(e.target.classList.contains('fdur')) return;
+  // 点击卡片：选中并跳到该帧开头
+  P.sel.frame = i;
+  playhead = M.frameStartAt(P,i);
+  renderAll();
+});
+flist.addEventListener('dblclick', e=>{
+  const card = e.target.closest('.framecard'); if(!card) return;
+  const name = prompt('帧名称', P.frames[+card.dataset.fi].name);
+  if(name != null){ M.renameFrame(P, +card.dataset.fi, name.trim()); afterChange(); }
+});
+flist.addEventListener('change', e=>{
+  if(e.target.classList.contains('fdur')){
+    const i = +e.target.closest('.framecard').dataset.fi;
+    M.setFrameDuration(P, i, +e.target.value);
+    afterChange();
+  }
+});
+// 帧拖拽排序（触屏可拖整张卡片）
+let frameDrag = null, frameDown = null, suppressFrameClick = false;
+flist.addEventListener('pointerdown', e=>{
+  if(e.target.closest('input,button')) return;
+  const card = e.target.closest('.framecard'); if(!card) return;
+  frameDown = {x:e.clientX,y:e.clientY,card};
+});
+flist.addEventListener('pointermove', e=>{
+  if(!frameDown) return;
+  if(!frameDrag && Math.hypot(e.clientX-frameDown.x,e.clientY-frameDown.y)>8){
+    frameDrag = +frameDown.card.dataset.fi;
+    frameDown.card.classList.add('dragging');
+  }
+});
+window.addEventListener('pointerup', e=>{
+  if(frameDrag !== null){
+    const cards = $$('#framelist .framecard');
+    let to = P.frames.length-1;
+    for(const c of cards){
+      const b = c.getBoundingClientRect();
+      if(e.clientX < b.left + b.width/2){ to = +c.dataset.fi; break; }
+    }
+    M.moveFrame(P, frameDrag, to);
+    playhead = M.frameStartAt(P, P.sel.frame);
+    frameDrag = null; frameDown = null;
+    suppressFrameClick = true; setTimeout(()=>suppressFrameClick=false,0);
+    afterChange();
+  }else frameDown = null;
+});
+$('#addFrame').addEventListener('click', ()=>{
+  M.addFrame(P);
+  playhead = M.frameStartAt(P, fi());
+  afterChange();
+});
+$('#dupFrame').addEventListener('click', ()=>{
+  M.duplicateFrame(P, fi());
+  playhead = M.frameStartAt(P, fi());
+  afterChange();
+});
+
+/* ---------- 撤销 / 重做 / 保存 ---------- */
+$('#undo').addEventListener('click', doUndo);
+$('#redo').addEventListener('click', doRedo);
+function doUndo(){
+  const label = M.undo(P);
+  if(label==null){ toast('没有可撤销的操作',true); return; }
+  playhead = M.clamp(playhead,0,M.totalDuration(P));
+  afterChange();
+  toast('撤销：'+label);
+}
+function doRedo(){
+  const ok = M.redo(P);
+  if(!ok){ toast('没有可重做的操作',true); return; }
+  playhead = M.clamp(playhead,0,M.totalDuration(P));
+  afterChange();
+  toast('重做');
+}
+$('#save').addEventListener('click', ()=>{
+  try{
+    localStorage.setItem(STORE_KEY, M.serialize(P));
+    toast('已保存到本地 · '+new Date().toLocaleTimeString());
+  }catch(e){ toast('保存失败：'+e.message,true); }
+});
+
+/* ---------- 导出 ---------- */
+function downloadBytes(bytes, name, mime){
+  const blob = new Blob([new Uint8Array(bytes)], {type:mime||'application/octet-stream'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 5000);
+}
+function rgbaOfCanvas(c){
+  return c.getContext('2d').getImageData(0,0,c.width,c.height).data;
+}
+const expScale = ()=>+$('#expScale').value || 1;
+$('#expFrame').addEventListener('click', ()=>{
+  const sm = M.sampleAt(P, playhead);
+  const c = makeCompositeCanvas(P.frames[sm.frameIndex], sm.localT, expScale(), $('#expBg').checked);
+  c.toBlob(b=>{
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(b); a.download='pixelloom-frame.png';
+    document.body.appendChild(a); a.click(); a.remove();
+    toast('已导出当前合成帧 PNG（'+c.width+'×'+c.height+'）');
+  },'image/png');
+});
+$('#expSheet').addEventListener('click', ()=>{
+  const fps = M.clamp(+$('#expFps').value||24,1,30);
+  const plan = M.exportSamples(P, fps);
+  const {cols,rows} = M.packRect(plan.frames.length);
+  const scale = expScale(), S = M.SIZE*scale;
+  const out = document.createElement('canvas');
+  out.width = cols*S; out.height = rows*S;
+  const x = out.getContext('2d');
+  x.imageSmoothingEnabled = false;
+  plan.frames.forEach((sm,i)=>{
+    const tile = makeCompositeCanvas(P.frames[sm.frameIndex], sm.localT, scale, $('#expBg').checked);
+    x.drawImage(tile, (i%cols)*S, ((i/cols)|0)*S);
+  });
+  out.toBlob(b=>{
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(b); a.download='pixelloom-sheet.png';
+    document.body.appendChild(a); a.click(); a.remove();
+  },'image/png');
+  const meta = {frames:plan.frames.map(s=>({frame:s.frameIndex, t:+s.localT.toFixed(4)})),
+    fps, cols, rows, frameWidth:S, frameHeight:S, loop:P.loop,
+    durations:P.frames.map(f=>f.duration)};
+  downloadBytes(new TextEncoder().encode(JSON.stringify(meta,null,2)),'pixelloom-sheet.json','application/json');
+  toast('已导出精灵表 '+cols+'×'+rows+'（'+plan.frames.length+' 帧 @'+fps+'fps）与 JSON 元数据');
+});
+// 浏览器原生 zlib 压缩（CompressionStream deflate 输出 zlib 格式）；不支持时回退无压缩
+async function browserZlib(raw){
+  if(typeof CompressionStream === 'function'){
+    try{
+      const stream = new Blob([raw]).stream().pipeThrough(new CompressionStream('deflate'));
+      return new Uint8Array(await new Response(stream).arrayBuffer());
+    }catch(e){ /* 回退 */ }
+  }
+  return M.zlibStore(raw);
+}
+$('#expApng').addEventListener('click', async ()=>{
+  const fps = M.clamp(+$('#expFps').value||24,1,30);
+  const plan = M.exportSamples(P, fps);
+  const scale = expScale(), S = M.SIZE*scale;
+  const memMB = plan.frames.length*S*S*4/1048576;
+  if(memMB > 400 && !confirm('导出将占用约 '+Math.round(memMB)+'MB 内存，可能卡顿。继续？')) return;
+  toast('正在编码 '+plan.frames.length+' 帧 APNG…');
+  const frames = plan.frames.map(sm=>{
+    const c = makeCompositeCanvas(P.frames[sm.frameIndex], sm.localT, scale, $('#expBg').checked);
+    return {rgba:new Uint8Array(rgbaOfCanvas(c)), delayMs:1000/fps};
+  });
+  try{
+    const bytes = await M.encodeAPNGAsync(S,S,frames, P.loop?0:1, browserZlib);
+    downloadBytes(bytes,'pixelloom-anim.png','image/png');
+    toast('已导出 APNG 动画（'+frames.length+' 帧，'+(P.loop?'循环':'单次')+'，'+(bytes.length/1024).toFixed(0)+'KB）');
+  }catch(e){
+    toast('APNG 编码失败：'+e.message,true);
+  }
+});
+
+/* ---------- 舞台缩放 / 网格 ---------- */
+$('#zoom').addEventListener('input', e=>{
+  const px = M.SIZE * (+e.target.value);
+  stage.style.width = stage.style.height = px+'px';
+  $('#canvaswrap').style.width = $('#canvaswrap').style.height = px+'px';
+});
+$('#grid').addEventListener('change', e=>{
+  $('#canvaswrap').classList.toggle('gridon', e.target.checked);
+});
+
+/* ---------- 键盘 ---------- */
+window.addEventListener('keydown', e=>{
+  const tag = (document.activeElement && document.activeElement.tagName)||'';
+  const typing = tag==='INPUT' || tag==='SELECT' || tag==='TEXTAREA';
+  const mod = e.ctrlKey || e.metaKey;
+  if(mod && e.key.toLowerCase()==='z' && !e.shiftKey){ e.preventDefault(); doUndo(); return; }
+  if(mod && (e.key.toLowerCase()==='y' || (e.key.toLowerCase()==='z'&&e.shiftKey))){ e.preventDefault(); doRedo(); return; }
+  if(mod && e.key.toLowerCase()==='s'){ e.preventDefault(); $('#save').click(); return; }
+  if(typing){
+    if(e.key==='Escape') document.activeElement.blur();
+    return;
+  }
+  switch(e.key){
+    case ' ': e.preventDefault(); togglePlay(); break;
+    case 'ArrowLeft': e.preventDefault();
+      if(P.sel.frame>0){ P.sel.frame--; seekPlayhead(M.frameStartAt(P,fi())); renderAll(); } break;
+    case 'ArrowRight': e.preventDefault();
+      if(P.sel.frame<P.frames.length-1){ P.sel.frame++; seekPlayhead(M.frameStartAt(P,fi())); renderAll(); } break;
+    case 'ArrowUp': e.preventDefault();
+      if(P.sel.layer<curF().layers.length-1){ P.sel.layer++; renderAll(); } break;
+    case 'ArrowDown': e.preventDefault();
+      if(P.sel.layer>0){ P.sel.layer--; renderAll(); } break;
+    case 'Home': seekPlayhead(0); break;
+    case 'b': case 'B': setTool('pencil'); $$('.tool').forEach(x=>x.classList.toggle('active',x.dataset.tool==='pencil')); break;
+    case 'e': case 'E': setTool('eraser'); $$('.tool').forEach(x=>x.classList.toggle('active',x.dataset.tool==='eraser')); break;
+    case 'g': case 'G': setTool('fill'); $$('.tool').forEach(x=>x.classList.toggle('active',x.dataset.tool==='fill')); break;
+    case 'i': case 'I': setTool('picker'); $$('.tool').forEach(x=>x.classList.toggle('active',x.dataset.tool==='picker')); break;
+    case 'Escape':
+      if(P._gesture){ M.keyGestureCancel(P); afterChange(); }
+      else if(playing) togglePlay();
+      break;
+  }
+});
+
+/* ---------- 总渲染 ---------- */
+function renderAll(){
+  renderFrames();
+  renderLayers();
+  renderStage();
+  renderChannels();
+  $('#undo').disabled = !P._past.length;
+  $('#redo').disabled = !P._future.length;
+}
+
+/* ---------- 初始化 ---------- */
+$('#zoom').dispatchEvent(new Event('input'));
+$('#grid').dispatchEvent(new Event('change'));
+playhead = M.clamp(playhead,0,M.totalDuration(P));
+renderAll();
+toast(loadedFrom ? ('已从本地存储恢复项目（' + loadedFrom + ' 存档）') : '新项目就绪');
+})();
+</script>
+</body></html>
+
